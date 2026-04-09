@@ -2,302 +2,375 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Restaurant Finder — LA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Restaurant Finder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #0f0f0f; color: #e0e0e0;
-    height: 100vh; display: flex; flex-direction: column;
+:root {
+  --bg: #0f0f0f; --surface: #1a1a2e; --surface2: #16213e;
+  --border: #2a2a4a; --text: #e0e0e0; --muted: #888; --dim: #555;
+  --accent: #c084fc; --accent2: #e879f9; --green: #22c55e;
+  --red: #ef4444; --yellow: #eab308; --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg); color: var(--text);
+  height: 100vh; height: 100dvh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ══════════ DESKTOP LAYOUT ══════════ */
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 10;
+}
+.header h1 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header .subtitle {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13px; font-style: italic; color: #aaa; margin-top: 2px;
+}
+.stats { font-size: 12px; color: var(--muted); }
+.stats span { color: var(--accent); font-weight: 600; }
+
+/* ── Desktop Filters ── */
+.desktop-filters {
+  background: var(--surface); padding: 10px 24px;
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-group label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--muted); font-weight: 600;
+}
+.filter-group select, .filter-group input[type="text"] {
+  background: var(--bg); border: 1px solid #333; color: var(--text);
+  padding: 5px 8px; border-radius: 6px; font-size: 12px; outline: none;
+}
+.filter-group select:focus, .filter-group input:focus { border-color: var(--accent); }
+.filter-group input[type="text"] { width: 130px; }
+
+.price-toggles { display: flex; gap: 3px; }
+.toggle-btn {
+  background: var(--bg); border: 1px solid #333; color: #999;
+  padding: 4px 8px; border-radius: 5px; font-size: 12px;
+  cursor: pointer; transition: all 0.15s;
+}
+.toggle-btn.active { background: #c084fc22; border-color: var(--accent); color: var(--accent); }
+.toggle-btn:hover { border-color: #c084fc88; }
+.toggle-btn.michelin.active { background: #dc262622; border-color: #dc2626; color: #dc2626; }
+.toggle-btn.fav-filter.active { background: #ef444422; border-color: var(--red); color: var(--red); }
+
+.reset-btn {
+  background: transparent; border: 1px solid #444; color: #999;
+  padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer;
+}
+.reset-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+.score-info { position: relative; cursor: help; }
+.score-tooltip {
+  display: none; position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%); background: var(--surface); border: 1px solid #333;
+  border-radius: 6px; padding: 8px 10px; font-size: 11px; color: #ccc;
+  width: 220px; z-index: 100; line-height: 1.5;
+}
+.score-info:hover .score-tooltip { display: block; }
+
+/* ── Main Layout ── */
+.main { display: flex; flex: 1; overflow: hidden; position: relative; }
+#map { flex: 1; min-width: 0; z-index: 1; }
+
+/* ── Map Legend ── */
+.map-legend {
+  position: absolute; bottom: 20px; left: 14px; z-index: 500;
+  background: #1a1a2eEE; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 10px; color: #aaa;
+}
+.map-legend h4 { color: var(--accent); margin-bottom: 4px; font-size: 11px; }
+.legend-item { display: flex; align-items: center; gap: 5px; margin: 3px 0; transition: color 0.15s; }
+.legend-item[data-filter]:hover { color: #fff; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.legend-heart { color: var(--red); font-size: 13px; }
+
+/* ── Desktop Sidebar ── */
+.sidebar {
+  width: 400px; background: #111; overflow-y: auto;
+  border-left: 1px solid var(--border); flex-shrink: 0;
+}
+.sidebar-header {
+  padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); position: sticky; top: 0; z-index: 10;
+}
+.sidebar-header span { color: var(--accent); font-weight: 600; }
+
+/* ── Cards ── */
+.card {
+  padding: 12px 14px; border-bottom: 1px solid #1a1a2e;
+  cursor: pointer; transition: background 0.15s;
+}
+.card:hover { background: var(--surface); }
+.card.active { background: var(--surface); border-left: 3px solid var(--accent); }
+
+.card-top { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; }
+.card-rank { font-size: 10px; color: var(--accent); font-weight: 700; margin-top: 2px; }
+.card-name { font-size: 14px; font-weight: 600; color: #f0f0f0; flex: 1; line-height: 1.3; }
+.card-score {
+  font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.score-high { background: #22c55e22; color: var(--green); }
+.score-med { background: #eab30822; color: var(--yellow); }
+.score-low { background: #66666622; color: #999; }
+
+.fav-btn {
+  background: none; border: none; font-size: 16px; cursor: pointer;
+  color: #444; transition: all 0.15s; padding: 0; flex-shrink: 0;
+}
+.fav-btn:hover { color: var(--red); }
+.fav-btn.is-fav { color: var(--red); }
+
+.michelin-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle;
+}
+.michelin-2star { background: #dc262633; color: #f87171; }
+.michelin-1star { background: #dc262622; color: var(--red); }
+.michelin-bib { background: #f9731622; color: #f97316; }
+.michelin-plate { background: #66666622; color: #aaa; }
+
+.card-meta {
+  display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px;
+  color: var(--muted); margin-bottom: 4px;
+}
+.card-meta .cuisine-tag {
+  background: #c084fc15; color: var(--accent); padding: 1px 6px;
+  border-radius: 10px; font-size: 10px;
+}
+.card-meta .price-tag { color: var(--green); font-weight: 600; }
+.tier-1{color:#22c55e}.tier-2{color:#3b82f6}.tier-3{color:#f97316}.tier-4{color:#06b6d4}
+
+.card-ratings { display: flex; gap: 10px; font-size: 11px; margin-bottom: 4px; }
+.rating-item { display: flex; align-items: center; gap: 3px; }
+.rating-stars { color: var(--yellow); font-size: 12px; }
+.rating-val { color: var(--text); font-weight: 600; }
+.rating-count { color: #666; font-size: 10px; }
+
+.card-img {
+  width: 100%; height: 70px; object-fit: cover; border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.card-links { display: flex; gap: 6px; flex-wrap: wrap; }
+.card-links a {
+  font-size: 10px; color: var(--accent); text-decoration: none;
+  padding: 2px 6px; border: 1px solid #c084fc44; border-radius: 4px;
+}
+.card-links a:hover { background: #c084fc22; }
+
+.breakdown {
+  display: none; font-size: 10px; color: #666;
+  margin-top: 5px; padding: 5px 7px; background: #0a0a15; border-radius: 4px;
+}
+.card.active .breakdown { display: block; }
+.breakdown span { color: var(--accent); }
+
+/* ── Map Popup ── */
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important; color: var(--text) !important;
+  border-radius: 10px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+}
+.leaflet-popup-content { margin: 10px 12px !important; max-width: 280px; }
+.leaflet-popup-tip { background: var(--surface) !important; }
+.popup-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; }
+.popup-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.popup-score { color: var(--accent); font-weight: 600; }
+.popup-michelin { color: var(--red); font-weight: 700; font-size: 11px; }
+.popup-meta { font-size: 11px; color: #999; margin-top: 4px; line-height: 1.5; }
+.popup-links { margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; }
+.popup-links a {
+  color: var(--accent); text-decoration: none; font-size: 11px;
+  padding: 2px 6px; border: 1px solid #c084fc44; border-radius: 4px;
+}
+.popup-fav-btn {
+  background: none; border: 1px solid #ef444444; color: #666;
+  padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+}
+.popup-fav-btn.is-fav { color: var(--red); border-color: var(--red); }
+
+/* ── Mobile Bottom Sheet ── */
+.bottom-sheet { display: none; }
+.mobile-search-bar { display: none; }
+.mobile-filter-chips { display: none; }
+
+.sidebar::-webkit-scrollbar { width: 5px; }
+.sidebar::-webkit-scrollbar-track { background: #111; }
+.sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ══════════ MOBILE LAYOUT ══════════ */
+@media (max-width: 900px) {
+  .header { display: none; }
+  .desktop-filters { display: none; }
+  .sidebar { display: none; }
+  .map-legend { display: none; }
+
+  .main { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  /* ── Floating Search Bar ── */
+  .mobile-search-bar {
+    display: flex; position: absolute; top: 12px; left: 12px; right: 12px;
+    z-index: 600; gap: 8px; align-items: center;
+  }
+  .mobile-search-bar input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 14px; border-radius: 24px;
+    font-size: 14px; outline: none; box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .mobile-search-bar input::placeholder { color: var(--dim); }
+  .mobile-search-bar input:focus { border-color: var(--accent); }
+  .mobile-search-bar .search-count {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 12px; font-size: 11px;
+    color: var(--accent); font-weight: 600; white-space: nowrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
   }
 
-  /* ── Header ── */
-  .header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    padding: 14px 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid #2a2a4a; flex-shrink: 0;
+  /* ── Floating Filter Chips ── */
+  .mobile-filter-chips {
+    display: flex; position: absolute; top: 58px; left: 0; right: 0;
+    z-index: 600; gap: 6px; padding: 0 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  .header h1 {
+  .mobile-filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; white-space: nowrap; cursor: pointer; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s;
+  }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: #c084fc18; }
+  .chip select {
+    background: transparent; border: none; color: inherit;
+    font-size: 12px; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none; padding-right: 2px;
+  }
+  .chip select option { background: var(--surface); color: var(--text); }
+
+  /* ── Bottom Sheet ── */
+  .bottom-sheet {
+    display: flex; flex-direction: column;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    z-index: 700; background: #111;
+    border-top-left-radius: 16px; border-top-right-radius: 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    transition: height 0.3s ease;
+    height: 35vh;
+    max-height: 85vh;
+    min-height: 80px;
+    touch-action: none;
+  }
+
+  .sheet-handle {
+    display: flex; justify-content: center; align-items: center;
+    padding: 10px 0 6px; cursor: grab; flex-shrink: 0;
+  }
+  .sheet-handle-bar {
+    width: 36px; height: 4px; background: #444; border-radius: 2px;
+  }
+
+  .sheet-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 16px 8px; flex-shrink: 0;
+  }
+  .sheet-title {
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 24px; font-weight: 600;
-    background: linear-gradient(135deg, #e879f9, #c084fc);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 16px; font-style: italic; color: #ccc;
   }
-  .header .subtitle {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 14px; font-style: italic; color: #aaa; margin-top: 4px; letter-spacing: 0.3px;
+  .sheet-count { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+  .sheet-content {
+    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-  .stats { font-size: 13px; color: #999; }
-  .stats span { color: #c084fc; font-weight: 600; }
 
-  /* ── Filters ── */
-  .filters {
-    background: #1a1a2e; padding: 10px 24px;
-    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-    border-bottom: 1px solid #2a2a4a; flex-shrink: 0;
+  /* Mobile cards - more compact */
+  .m-card {
+    display: flex; gap: 10px; padding: 10px 16px;
+    border-bottom: 1px solid #1a1a1a; cursor: pointer;
+    transition: background 0.12s;
   }
-  .filter-group { display: flex; align-items: center; gap: 6px; }
-  .filter-group label {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-    color: #888; font-weight: 600;
+  .m-card:active { background: var(--surface); }
+  .m-card.active { background: var(--surface); }
+
+  .m-card-img {
+    width: 70px; height: 70px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+    background: #222;
   }
-  .filter-group select, .filter-group input[type="text"] {
-    background: #0f0f1a; border: 1px solid #333; color: #e0e0e0;
-    padding: 6px 10px; border-radius: 6px; font-size: 13px; outline: none;
+  .m-card-img-placeholder {
+    width: 70px; height: 70px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: #333;
   }
-  .filter-group select:focus, .filter-group input:focus { border-color: #c084fc; }
-  .filter-group input[type="text"] { width: 140px; }
 
-  .toggle-btn {
-    background: #0f0f1a; border: 1px solid #333; color: #999;
-    padding: 5px 10px; border-radius: 6px; font-size: 13px;
-    cursor: pointer; transition: all 0.15s;
+  .m-card-body { flex: 1; min-width: 0; }
+  .m-card-top { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 3px; }
+  .m-card-name {
+    font-size: 14px; font-weight: 600; color: #f0f0f0;
+    flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .toggle-btn.active { background: #c084fc22; border-color: #c084fc; color: #c084fc; }
-  .toggle-btn:hover { border-color: #c084fc88; }
-  .toggle-btn.michelin.active { background: #dc262622; border-color: #dc2626; color: #dc2626; }
-  .toggle-btn.fav-filter.active { background: #ef444422; border-color: #ef4444; color: #ef4444; }
-
-  .price-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
-
-  .reset-btn {
-    background: transparent; border: 1px solid #555; color: #999;
-    padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  .m-card-fav {
+    background: none; border: none; font-size: 16px; color: #444;
+    cursor: pointer; padding: 0; flex-shrink: 0;
   }
-  .reset-btn:hover { border-color: #e879f9; color: #e879f9; }
+  .m-card-fav.is-fav { color: var(--red); }
 
-  /* ── Main ── */
-  .main { display: flex; flex: 1; overflow: hidden; }
-  #map { flex: 1; min-width: 0; }
-
-  /* ── Map Legend ── */
-  .map-legend {
-    position: absolute; bottom: 20px; left: 20px; z-index: 999;
-    background: #1a1a2eee; border: 1px solid #2a2a4a; border-radius: 8px;
-    padding: 10px 14px; font-size: 11px; color: #aaa;
-    max-width: 200px;
+  .m-card-info {
+    font-size: 11px; color: var(--muted); line-height: 1.6;
   }
-  .map-legend h4 { color: #c084fc; margin-bottom: 6px; font-size: 12px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
-  .legend-dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  .m-card-info .stars { color: var(--yellow); }
+  .m-card-info .price { color: var(--green); font-weight: 600; }
+  .m-card-info .score { color: var(--accent); font-weight: 600; }
+
+  .m-card-tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .m-card-tag {
+    font-size: 9px; padding: 1px 6px; border-radius: 10px;
+    background: #c084fc12; color: var(--accent); border: 1px solid #c084fc33;
   }
-  .legend-heart { color: #ef4444; font-size: 14px; flex-shrink: 0; }
+  .m-card-tag.michelin { background: #dc262615; color: #f87171; border-color: #dc262644; }
 
-  /* ── Score Tooltip ── */
-  .score-info {
-    position: relative; cursor: help;
+  .m-card-links { display: flex; gap: 6px; margin-top: 5px; }
+  .m-card-links a {
+    font-size: 10px; color: var(--accent); text-decoration: none;
+    padding: 2px 8px; border: 1px solid #c084fc33; border-radius: 12px;
   }
-  .score-tooltip {
-    display: none; position: absolute; bottom: 100%; left: 50%;
-    transform: translateX(-50%); background: #1a1a2e; border: 1px solid #333;
-    border-radius: 6px; padding: 8px 10px; font-size: 11px; color: #ccc;
-    width: 220px; z-index: 100; line-height: 1.5;
-  }
-  .score-info:hover .score-tooltip { display: block; }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 420px; background: #111; overflow-y: auto;
-    border-left: 1px solid #2a2a4a; flex-shrink: 0;
-  }
-  .sidebar-header {
-    padding: 12px 16px; background: #1a1a2e; border-bottom: 1px solid #2a2a4a;
-    font-size: 13px; color: #888; position: sticky; top: 0; z-index: 10;
-  }
-  .sidebar-header span { color: #c084fc; font-weight: 600; }
-
-  /* ── Card ── */
-  .card {
-    padding: 14px 16px; border-bottom: 1px solid #1a1a2e;
-    cursor: pointer; transition: background 0.15s;
-  }
-  .card:hover { background: #1a1a2e; }
-  .card.active { background: #1a1a2e; border-left: 3px solid #c084fc; }
-
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-  .card-rank { font-size: 11px; color: #c084fc; font-weight: 700; margin-right: 8px; }
-  .card-name { font-size: 15px; font-weight: 600; color: #f0f0f0; flex: 1; }
-  .card-score { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
-  .score-high { background: #22c55e22; color: #22c55e; }
-  .score-med { background: #eab30822; color: #eab308; }
-  .score-low { background: #66666622; color: #999; }
-
-  .fav-btn {
-    background: none; border: none; font-size: 18px; cursor: pointer;
-    color: #444; transition: all 0.15s; padding: 0 4px; flex-shrink: 0;
-  }
-  .fav-btn:hover { color: #ef4444; transform: scale(1.2); }
-  .fav-btn.is-fav { color: #ef4444; }
-
-  .michelin-badge {
-    display: inline-block; font-size: 10px; font-weight: 700;
-    padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle;
-  }
-  .michelin-2star { background: #dc262633; color: #f87171; }
-  .michelin-1star { background: #dc262622; color: #ef4444; }
-  .michelin-bib { background: #f9731622; color: #f97316; }
-  .michelin-plate { background: #66666622; color: #aaa; }
-
-  .card-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #888; margin-bottom: 6px; }
-  .card-meta .cuisine-tag { background: #c084fc15; color: #c084fc; padding: 1px 8px; border-radius: 10px; font-size: 11px; }
-  .card-meta .price-tag { color: #22c55e; font-weight: 600; }
-  .tier-1 { color: #22c55e; } .tier-2 { color: #3b82f6; } .tier-3 { color: #f97316; } .tier-4 { color: #06b6d4; }
-
-  .card-ratings { display: flex; gap: 14px; font-size: 12px; margin-bottom: 6px; }
-  .rating-item { display: flex; align-items: center; gap: 4px; }
-  .rating-stars { color: #eab308; }
-  .rating-val { color: #e0e0e0; font-weight: 600; }
-  .rating-count { color: #666; font-size: 11px; }
-
-  .card-categories { font-size: 11px; color: #777; margin-bottom: 8px; }
-
-  .card-links { display: flex; gap: 8px; flex-wrap: wrap; }
-  .card-links a {
-    font-size: 11px; color: #c084fc; text-decoration: none;
-    padding: 2px 8px; border: 1px solid #c084fc44; border-radius: 4px; transition: all 0.15s;
-  }
-  .card-links a:hover { background: #c084fc22; border-color: #c084fc; }
-
-  .breakdown {
-    display: none; font-size: 11px; color: #777;
-    margin-top: 6px; padding: 6px 8px; background: #0a0a15; border-radius: 4px;
-  }
-  .card.active .breakdown { display: block; }
-  .breakdown span { color: #c084fc; }
-
-  /* ── Map Popup ── */
-  .leaflet-popup-content-wrapper {
-    background: #1a1a2e !important; color: #e0e0e0 !important;
-    border-radius: 10px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-    max-width: 340px !important;
-  }
-  .leaflet-popup-content { margin: 10px 12px !important; }
-  .leaflet-popup-tip { background: #1a1a2e !important; }
-  .popup-img {
-    width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;
-  }
-  .popup-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
-  .popup-score { color: #c084fc; font-weight: 600; }
-  .popup-michelin { color: #ef4444; font-weight: 700; font-size: 12px; }
-  .popup-meta { font-size: 12px; color: #999; margin-top: 4px; line-height: 1.6; }
-  .popup-links { margin-top: 8px; }
-  .popup-links a {
-    color: #c084fc; text-decoration: none; font-size: 12px; margin-right: 10px;
-    padding: 3px 8px; border: 1px solid #c084fc44; border-radius: 4px;
-  }
-  .popup-links a:hover { background: #c084fc22; }
-  .popup-fav-btn {
-    background: none; border: 1px solid #ef444444; color: #666;
-    padding: 3px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .popup-fav-btn:hover, .popup-fav-btn.is-fav { color: #ef4444; border-color: #ef4444; }
-
-  .sidebar::-webkit-scrollbar { width: 6px; }
-  .sidebar::-webkit-scrollbar-track { background: #111; }
-  .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-
-  /* ── Mobile Filter Toggle ── */
-  .filter-toggle {
-    display: none;
-    background: #1a1a2e; border: none; color: #c084fc;
-    padding: 8px 24px; font-size: 13px; font-weight: 600;
-    cursor: pointer; border-bottom: 1px solid #2a2a4a;
-    width: 100%; text-align: left;
-  }
-  .filter-toggle:hover { background: #1f1f35; }
-  .filter-toggle::after { content: ' ▼'; font-size: 10px; }
-  .filter-toggle.open::after { content: ' ▲'; }
-
-  /* ── Mobile Tab Bar ── */
-  .mobile-tabs {
-    display: none;
-    background: #1a1a2e; border-top: 1px solid #2a2a4a;
-    flex-shrink: 0;
-  }
-  .mobile-tabs button {
-    flex: 1; background: none; border: none; color: #888;
-    padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
-  }
-  .mobile-tabs button.active { color: #c084fc; border-bottom: 2px solid #c084fc; }
-
-  @media (max-width: 900px) {
-    body { height: 100vh; height: 100dvh; overflow: hidden; }
-
-    .header { padding: 8px 16px; flex-shrink: 0; }
-    .header h1 { font-size: 18px; }
-    .header .subtitle { font-size: 11px; margin-top: 2px; }
-    .stats { font-size: 11px; }
-
-    .filter-toggle { display: block; flex-shrink: 0; }
-
-    /* Filters overlay the map, don't push it down */
-    .filters {
-      display: none; padding: 10px 16px; gap: 8px;
-      position: absolute; top: 0; left: 0; right: 0;
-      z-index: 1000; background: #1a1a2eF5;
-      max-height: 70vh; overflow-y: auto;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    .filters.open { display: flex; }
-
-    .mobile-tabs { display: flex; flex-shrink: 0; }
-
-    /* Main takes all remaining space */
-    .main {
-      flex-direction: column; flex: 1;
-      overflow: hidden; position: relative;
-    }
-
-    /* Map fills entire main area */
-    #map { flex: 1; min-height: 0; width: 100%; }
-
-    /* Sidebar takes entire main area when visible */
-    .sidebar {
-      width: 100%; border-left: none; border-top: 1px solid #2a2a4a;
-      display: none;
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 500;
-    }
-    .sidebar.mobile-visible { display: block; }
-    #map.mobile-hidden { display: none; }
-
-    .map-legend { bottom: 10px; left: 10px; padding: 6px 10px; font-size: 10px; max-width: 150px; }
-    .map-legend h4 { font-size: 10px; margin-bottom: 4px; }
-    .legend-item { margin: 2px 0; font-size: 10px; }
-
-    .filter-group { width: 100%; }
-    .filter-group select, .filter-group input[type="text"] { flex: 1; }
-    .price-toggles { flex-wrap: wrap; }
-
-    .card { padding: 10px 12px; }
-    .card-name { font-size: 14px; }
-
-    .leaflet-popup-content-wrapper { max-width: 280px !important; }
-    .popup-img { height: 100px; }
-  }
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER (desktop only) -->
 <div class="header">
   <div>
     <h1>Restaurant Finder</h1>
     <div class="subtitle">Restaurants that Match Sofias Vibe</div>
   </div>
-  <div class="stats"><span id="visible-count">0</span> of <span id="total-count">0</span> restaurants</div>
+  <div class="stats"><span id="visible-count">0</span> of <span id="total-count">0</span></div>
 </div>
 
-<button class="filter-toggle" id="filter-toggle">Filters</button>
-<div class="filters" id="filters-panel">
+<!-- DESKTOP FILTERS -->
+<div class="desktop-filters">
   <div class="filter-group">
     <label>Price</label>
     <div class="price-toggles">
@@ -308,413 +381,474 @@
       <button class="toggle-btn active" data-price="0">?</button>
     </div>
   </div>
-
   <div class="filter-group">
     <label>Cuisine</label>
-    <select id="cuisine-filter">
-      <option value="all">All Cuisines</option>
-    </select>
+    <select id="cuisine-filter"><option value="all">All Cuisines</option></select>
   </div>
-
   <div class="filter-group">
     <label>Area</label>
     <select id="area-filter">
       <option value="all">All Areas</option>
-      <option value="1">West LA</option>
-      <option value="2">East / DTLA</option>
-      <option value="3">The Valley</option>
-      <option value="4">Orange County</option>
+      <option value="1">West LA</option><option value="2">East / DTLA</option>
+      <option value="3">The Valley</option><option value="4">Orange County</option>
     </select>
   </div>
-
   <div class="filter-group">
-    <label>Min Reviews</label>
+    <label>Reviews</label>
     <select id="reviews-filter">
-      <option value="0">Any</option>
-      <option value="50">50+</option>
-      <option value="100" selected>100+</option>
-      <option value="250">250+</option>
-      <option value="500">500+</option>
-      <option value="1000">1000+</option>
+      <option value="0">Any</option><option value="50">50+</option>
+      <option value="100" selected>100+</option><option value="250">250+</option>
+      <option value="500">500+</option><option value="1000">1000+</option>
     </select>
   </div>
-
   <div class="filter-group">
     <label>Rating</label>
     <select id="rating-filter">
-      <option value="0">Any</option>
-      <option value="3.5">3.5+</option>
-      <option value="4.0" selected>4.0+</option>
-      <option value="4.3">4.3+</option>
+      <option value="0">Any</option><option value="3.5">3.5+</option>
+      <option value="4.0" selected>4.0+</option><option value="4.3">4.3+</option>
       <option value="4.5">4.5+</option>
     </select>
   </div>
-
   <div class="filter-group score-info">
     <label>Score</label>
     <select id="score-filter">
-      <option value="0">Any</option>
-      <option value="40">40+</option>
-      <option value="50" selected>50+</option>
-      <option value="60">60+</option>
+      <option value="0">Any</option><option value="40">40+</option>
+      <option value="50" selected>50+</option><option value="60">60+</option>
       <option value="70">70+</option>
     </select>
     <div class="score-tooltip">
-      <strong style="color:#c084fc">Vibe Score (0-110)</strong><br>
-      How well it matches Sofia's taste:<br>
-      <strong>Cuisine</strong> (25pts) — matches her fav types<br>
-      <strong>Vibe</strong> (30pts) — upscale atmosphere<br>
-      <strong>Rating</strong> (20pts) — Google + Yelp avg<br>
-      <strong>Price</strong> (15pts) — $$-$$$ sweet spot<br>
-      <strong>Popularity</strong> (10pts) — review volume<br>
-      <strong>Area</strong> (+10pts) — West LA bonus
+      <strong style="color:var(--accent)">Vibe Score (0-110)</strong><br>
+      <strong>Cuisine</strong> (25) &middot; <strong>Vibe</strong> (30) &middot;
+      <strong>Rating</strong> (20) &middot; <strong>Price</strong> (15) &middot;
+      <strong>Pop</strong> (10) &middot; <strong>Area</strong> (+10)
     </div>
   </div>
-
   <button class="toggle-btn michelin" id="michelin-filter">Michelin</button>
   <button class="toggle-btn fav-filter" id="fav-filter">Favorites</button>
-
   <div class="filter-group">
     <label>Search</label>
     <input type="text" id="search-input" placeholder="Name or area...">
   </div>
-
   <button class="reset-btn" id="reset-filters">Reset</button>
 </div>
 
+<!-- MAIN -->
 <div class="main">
-  <div id="map" style="position:relative">
-    <div class="map-legend" id="map-legend">
+  <!-- Map (always full on mobile, flex on desktop) -->
+  <div id="map">
+    <div class="map-legend">
       <h4>Legend</h4>
-      <div class="legend-item"><span class="legend-heart">&#10084;</span> Sofia's Favorites</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Japanese / Sushi</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Italian</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> Steakhouse</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div> Persian</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Mediterranean</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div> Mexican</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div> Asian</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div> Seafood</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div> Other</div>
-      <div class="legend-item" style="margin-top:4px"><div class="legend-dot" style="background:#888;border:2px solid #dc2626"></div> Michelin</div>
+      <div class="legend-item" data-filter="fav" style="cursor:pointer"><span class="legend-heart">&#10084;</span> Favorites</div>
+      <div class="legend-item" data-filter="Japanese / Sushi" style="cursor:pointer"><div class="legend-dot" style="background:#ef4444"></div> Japanese / Sushi</div>
+      <div class="legend-item" data-filter="Italian" style="cursor:pointer"><div class="legend-dot" style="background:#22c55e"></div> Italian</div>
+      <div class="legend-item" data-filter="Steakhouse" style="cursor:pointer"><div class="legend-dot" style="background:#f97316"></div> Steakhouse</div>
+      <div class="legend-item" data-filter="Persian" style="cursor:pointer"><div class="legend-dot" style="background:#a855f7"></div> Persian</div>
+      <div class="legend-item" data-filter="Mediterranean" style="cursor:pointer"><div class="legend-dot" style="background:#3b82f6"></div> Mediterranean</div>
+      <div class="legend-item" data-filter="Mexican" style="cursor:pointer"><div class="legend-dot" style="background:#eab308"></div> Mexican</div>
+      <div class="legend-item" data-filter="Asian" style="cursor:pointer"><div class="legend-dot" style="background:#ec4899"></div> Asian</div>
+      <div class="legend-item" data-filter="Seafood" style="cursor:pointer"><div class="legend-dot" style="background:#06b6d4"></div> Seafood</div>
+      <div class="legend-item" data-filter="Other" style="cursor:pointer"><div class="legend-dot" style="background:#6b7280"></div> Other</div>
+      <div class="legend-item" data-filter="michelin" style="cursor:pointer;margin-top:3px"><div class="legend-dot" style="background:#888;border:2px solid #dc2626"></div> Michelin</div>
     </div>
   </div>
+
+  <!-- Desktop Sidebar -->
   <div class="sidebar" id="sidebar-panel">
-    <div class="sidebar-header">
-      <span id="sidebar-count">0</span> restaurants — sorted by score
-    </div>
+    <div class="sidebar-header"><span id="sidebar-count">0</span> restaurants</div>
     <div id="card-list"></div>
   </div>
-</div>
 
-<div class="mobile-tabs">
-  <button class="active" id="tab-map">Map</button>
-  <button id="tab-list">List</button>
+  <!-- Mobile: Floating search bar -->
+  <div class="mobile-search-bar">
+    <input type="text" id="m-search" placeholder="Search restaurants...">
+    <div class="search-count" id="m-count">0</div>
+  </div>
+
+  <!-- Mobile: Horizontal filter chips -->
+  <div class="mobile-filter-chips">
+    <div class="chip"><select id="m-cuisine"><option value="all">Cuisine</option></select></div>
+    <div class="chip"><select id="m-area"><option value="all">Area</option><option value="1">West LA</option><option value="2">East/DTLA</option><option value="3">Valley</option><option value="4">OC</option></select></div>
+    <div class="chip"><select id="m-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
+    <div class="chip"><select id="m-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
+    <div class="chip" id="m-michelin-chip">Michelin</div>
+    <div class="chip" id="m-fav-chip">&#10084; Favs</div>
+  </div>
+
+  <!-- Mobile: Draggable Bottom Sheet -->
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="sheet-handle" id="sheet-handle"><div class="sheet-handle-bar"></div></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Restaurants that Match Sofias Vibe</div>
+      <div class="sheet-count" id="m-sheet-count">0</div>
+    </div>
+    <div class="sheet-content" id="sheet-content"></div>
+  </div>
 </div>
 
 <script>
-let ALL_DATA = [];
+let ALL_DATA = [], FILTERED = [];
 let map, markerGroup, favMarkerGroup;
 let userFavorites = JSON.parse(localStorage.getItem('sofia_favorites') || '{}');
+const isMobile = () => window.innerWidth <= 900;
 
 const CUISINE_COLORS = {
-  "Japanese / Sushi": "#ef4444", "Italian": "#22c55e", "Steakhouse": "#f97316",
-  "Persian": "#a855f7", "Mediterranean": "#3b82f6", "Mexican": "#eab308",
-  "Asian": "#ec4899", "Seafood": "#06b6d4", "American": "#8b5cf6", "Other": "#6b7280",
+  "Japanese / Sushi":"#ef4444","Italian":"#22c55e","Steakhouse":"#f97316",
+  "Persian":"#a855f7","Mediterranean":"#3b82f6","Mexican":"#eab308",
+  "Asian":"#ec4899","Seafood":"#06b6d4","American":"#8b5cf6","Other":"#6b7280",
 };
+const TIER_LABELS = {1:"West LA",2:"East/DTLA",3:"Valley",4:"OC"};
+const TIER_COLORS = {1:"tier-1",2:"tier-2",3:"tier-3",4:"tier-4"};
 
-const TIER_LABELS = { 1: "West LA", 2: "East/DTLA", 3: "Valley", 4: "OC" };
-const TIER_COLORS = { 1: "tier-1", 2: "tier-2", 3: "tier-3", 4: "tier-4" };
-
-function saveFavorites() {
-  localStorage.setItem('sofia_favorites', JSON.stringify(userFavorites));
+function saveFavorites() { localStorage.setItem('sofia_favorites', JSON.stringify(userFavorites)); }
+function isFav(n) { return !!userFavorites[n]; }
+function toggleFav(n) {
+  if (userFavorites[n]) delete userFavorites[n]; else userFavorites[n] = true;
+  saveFavorites(); applyFilters();
 }
 
-function isFav(name) { return !!userFavorites[name]; }
-
-function toggleFav(name) {
-  if (userFavorites[name]) delete userFavorites[name];
-  else userFavorites[name] = true;
-  saveFavorites();
-  applyFilters();
+function createIcon(color, score, mic) {
+  const s = score>=80?18:score>=70?15:score>=60?13:11;
+  const sz = mic?Math.max(s,20):s;
+  const bd = mic?'3px solid #dc2626':`2px solid ${color}88`;
+  return L.divIcon({className:'',
+    html:`<div style="width:${sz}px;height:${sz}px;background:${color};border:${bd};border-radius:50%;box-shadow:0 0 6px ${color}44;cursor:pointer"></div>`,
+    iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
 }
-
-function createIcon(color, score, isMichelin) {
-  const s = score >= 80 ? 18 : score >= 70 ? 15 : score >= 60 ? 13 : 11;
-  const size = isMichelin ? Math.max(s, 20) : s;
-  const border = isMichelin ? '3px solid #dc2626' : `2px solid ${color}88`;
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:${color};border:${border};border-radius:50%;box-shadow:0 0 6px ${color}44;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform='scale(1.4)'" onmouseout="this.style.transform='scale(1)'"></div>`,
-    iconSize: [size, size], iconAnchor: [size/2, size/2],
-  });
-}
-
 function createHeartIcon() {
-  return L.divIcon({
-    className: '',
-    html: `<div style="font-size:22px;color:#ef4444;filter:drop-shadow(0 0 4px #ef444488);cursor:pointer;text-align:center;line-height:1;transition:transform .15s" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">&#10084;</div>`,
-    iconSize: [22, 22], iconAnchor: [11, 11],
-  });
+  return L.divIcon({className:'',
+    html:`<div style="font-size:22px;color:#ef4444;filter:drop-shadow(0 0 4px #ef444488);text-align:center;line-height:1">&#10084;</div>`,
+    iconSize:[22,22],iconAnchor:[11,11]});
 }
 
 function initMap() {
-  map = L.map('map', { zoomControl: true, attributionControl: false }).setView([34.05, -118.40], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  map = L.map('map',{zoomControl:!isMobile(),attributionControl:false}).setView([34.05,-118.40],11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
   markerGroup = L.layerGroup().addTo(map);
   favMarkerGroup = L.layerGroup().addTo(map);
 }
 
-function getScoreClass(s) { return s >= 70 ? 'score-high' : s >= 50 ? 'score-med' : 'score-low'; }
-function starsHtml(r) { if (!r) return ''; const f = Math.floor(r); return '<span class="rating-stars">' + '\u2605'.repeat(f) + (r % 1 >= 0.3 ? '\u00BD' : '') + '</span>'; }
-
-function michelinBadge(r) {
-  if (!r.michelin) return '';
-  const c = {
-    '2star':'michelin-2star','1star':'michelin-1star','bib':'michelin-bib'
-  }[r.michelin_distinction] || 'michelin-plate';
+function scoreClass(s){return s>=70?'score-high':s>=50?'score-med':'score-low'}
+function stars(r){if(!r)return'';return '<span class="stars">'+'★'.repeat(Math.floor(r))+(r%1>=.3?'½':'')+'</span>'}
+function micBadge(r){
+  if(!r.michelin)return'';
+  const c={'2star':'michelin-2star','1star':'michelin-1star','bib':'michelin-bib'}[r.michelin_distinction]||'michelin-plate';
   return `<span class="michelin-badge ${c}">${r.michelin}</span>`;
 }
 
+// ── Popup (shared) ──
 function buildPopup(r) {
-  const links = [];
-  if (r.yelp_url) links.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
-  if (r.maps_url) links.push(`<a href="${r.maps_url}" target="_blank">Maps</a>`);
-  if (r.website) links.push(`<a href="${r.website}" target="_blank">Web</a>`);
-  links.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>`);
-  links.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}" target="_blank">Menu</a>`);
-
-  const img = r.image_url ? `<img class="popup-img" src="${r.image_url}" alt="${r.name}" onerror="this.style.display='none'">` : '';
-  const favClass = isFav(r.name) ? 'is-fav' : '';
-
-  return `
-    ${img}
-    <div class="popup-name">${r.name} ${r.michelin ? `<span class="popup-michelin">${r.michelin}</span>` : ''}</div>
+  const lnks=[];
+  if(r.yelp_url)lnks.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
+  lnks.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>`);
+  lnks.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}" target="_blank">Menu</a>`);
+  const img=r.image_url?`<img class="popup-img" src="${r.image_url}" onerror="this.style.display='none'">`:'';
+  return `${img}
+    <div class="popup-name">${r.name} ${r.michelin?`<span class="popup-michelin">${r.michelin}</span>`:''}</div>
     <div><span class="popup-score">${r.score}/110</span> &middot; ${r.price_display} &middot; ${r.cuisine_type}</div>
     <div class="popup-meta">
-      ${r.avg_rating ? `${starsHtml(r.avg_rating)} ${r.avg_rating} (${r.total_reviews.toLocaleString()} reviews)` : ''}
-      <br>${r.categories.join(', ')}
-      <br>${r.address}
-      <br>${TIER_LABELS[r.area_tier] || ''} &middot; ${r.area_name}
+      ${r.avg_rating?`${stars(r.avg_rating)} ${r.avg_rating} (${r.total_reviews.toLocaleString()} reviews)`:''}
+      <br>${r.categories.join(', ')}<br>${r.address}
     </div>
-    <div class="popup-links">
-      ${links.join('')}
-      <button class="popup-fav-btn ${favClass}" onclick="toggleFav('${r.name.replace(/'/g,"\\'")}'); applyFilters();">
-        ${isFav(r.name) ? '\u2764 Favorited' : '\u2661 Favorite'}
+    <div class="popup-links">${lnks.join('')}
+      <button class="popup-fav-btn ${isFav(r.name)?'is-fav':''}" onclick="toggleFav('${r.name.replace(/'/g,"\\'")}')">
+        ${isFav(r.name)?'♥ Saved':'♡ Save'}
       </button>
-    </div>
-  `;
+    </div>`;
 }
 
-function buildCard(r, idx) {
-  const b = r.score_breakdown || {};
-  const links = [];
-  if (r.yelp_url) links.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
-  if (r.website) links.push(`<a href="${r.website}" target="_blank">Web</a>`);
-  links.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>`);
-  links.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}" target="_blank">Menu</a>`);
+// ── Desktop Card ──
+function buildCard(r,i) {
+  const b=r.score_breakdown||{};
+  const lnks=[];
+  if(r.yelp_url)lnks.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
+  lnks.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>`);
+  lnks.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}" target="_blank">Menu</a>`);
+  return `<div class="card" data-idx="${i}" data-lat="${r.lat}" data-lng="${r.lng}">
+    <div class="card-top">
+      <span class="card-rank">#${i+1}</span>
+      <span class="card-name">${r.name}</span>${micBadge(r)}
+      <button class="fav-btn ${isFav(r.name)||r.is_favorite?'is-fav':''}" onclick="event.stopPropagation();toggleFav('${r.name.replace(/'/g,"\\'")}')">${isFav(r.name)||r.is_favorite?'♥':'♡'}</button>
+      <span class="card-score ${scoreClass(r.score)}">${r.score}</span>
+    </div>
+    ${r.image_url?`<img class="card-img" src="${r.image_url}" onerror="this.style.display='none'">`:''}
+    <div class="card-meta">
+      <span class="cuisine-tag">${r.cuisine_type}</span>
+      <span class="price-tag">${r.price_display}</span>
+      <span class="${TIER_COLORS[r.area_tier]||'tier-3'}">${TIER_LABELS[r.area_tier]||''} &middot; ${r.area_name}</span>
+    </div>
+    <div class="card-ratings">
+      ${r.avg_rating?`<div class="rating-item"><span class="rating-stars">★</span><span class="rating-val">${r.avg_rating}</span><span class="rating-count">(${r.total_reviews.toLocaleString()})</span></div>`:''}
+    </div>
+    <div class="card-links">${lnks.join('')}</div>
+    <div class="breakdown">Cuisine:<span>${b.cuisine||0}</span> Vibe:<span>${b.vibe||0}</span> Rating:<span>${b.rating||0}</span> Price:<span>${b.price||0}</span> Pop:<span>${b.popularity||0}</span></div>
+  </div>`;
+}
 
-  const favClass = isFav(r.name) || r.is_favorite ? 'is-fav' : '';
-  const heart = isFav(r.name) || r.is_favorite ? '\u2764' : '\u2661';
+// ── Mobile Card (compact, Google Maps style) ──
+function buildMobileCard(r, i) {
+  const esc = r.name.replace(/'/g, "\\'");
+  const imgHtml = r.image_url
+    ? `<img class="m-card-img" src="${r.image_url}" onerror="this.parentNode.querySelector('.m-card-img').style.display='none';this.parentNode.querySelector('.m-card-img-placeholder').style.display='flex'">`
+    : '';
+  const placeholderStyle = r.image_url ? 'display:none' : '';
+  const tags = [];
+  tags.push(`<span class="m-card-tag">${r.cuisine_type}</span>`);
+  if (r.michelin) tags.push(`<span class="m-card-tag michelin">${r.michelin}</span>`);
 
-  return `
-    <div class="card" data-idx="${idx}" data-lat="${r.lat}" data-lng="${r.lng}" data-name="${r.name.replace(/"/g,'&quot;')}">
-      <div class="card-top">
-        <div style="display:flex;align-items:baseline;flex:1;min-width:0;gap:4px">
-          <span class="card-rank">#${idx+1}</span>
-          <span class="card-name">${r.name}</span>
-          ${michelinBadge(r)}
-        </div>
-        <button class="fav-btn ${favClass}" onclick="event.stopPropagation();toggleFav('${r.name.replace(/'/g,"\\'")}')">${heart}</button>
-        <span class="card-score ${getScoreClass(r.score)}">${r.score}</span>
+  return `<div class="m-card" data-idx="${i}" data-lat="${r.lat}" data-lng="${r.lng}">
+    ${imgHtml}<div class="m-card-img-placeholder" style="${placeholderStyle}">&#127869;</div>
+    <div class="m-card-body">
+      <div class="m-card-top">
+        <div class="m-card-name">${r.name}</div>
+        <button class="m-card-fav ${isFav(r.name)||r.is_favorite?'is-fav':''}" onclick="event.stopPropagation();toggleFav('${esc}')">${isFav(r.name)||r.is_favorite?'♥':'♡'}</button>
       </div>
-      ${r.image_url ? `<img src="${r.image_url}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px" onerror="this.style.display='none'">` : ''}
-      <div class="card-meta">
-        <span class="cuisine-tag">${r.cuisine_type}</span>
-        <span class="price-tag">${r.price_display}</span>
-        <span class="${TIER_COLORS[r.area_tier] || 'tier-3'}">${TIER_LABELS[r.area_tier] || ''} &middot; ${r.area_name}</span>
+      <div class="m-card-info">
+        ${r.avg_rating?`${stars(r.avg_rating)} ${r.avg_rating} (${r.total_reviews.toLocaleString()})`:''} &middot;
+        <span class="price">${r.price_display}</span> &middot;
+        <span class="score">${r.score}pts</span>
+        <br>${r.area_name} &middot; ${r.categories.slice(0,2).join(', ')}
       </div>
-      <div class="card-ratings">
-        ${r.avg_rating ? `<div class="rating-item">${starsHtml(r.avg_rating)} <span class="rating-val">${r.avg_rating}</span> <span class="rating-count">(${r.total_reviews.toLocaleString()} reviews)</span></div>` : ''}
-      </div>
-      <div class="card-categories">${r.categories.join(' &middot; ')}</div>
-      <div class="card-links">${links.join('')}</div>
-      <div class="breakdown">
-        Cuisine:<span>${b.cuisine||0}</span> Vibe:<span>${b.vibe||0}</span> Rating:<span>${b.rating||0}</span> Price:<span>${b.price||0}</span> Pop:<span>${b.popularity||0}</span>
+      <div class="m-card-tags">${tags.join('')}</div>
+      <div class="m-card-links">
+        <a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>
+        ${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}
+        <a href="https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}" target="_blank">Menu</a>
       </div>
     </div>
-  `;
+  </div>`;
+}
+
+// ── Filters ──
+function getFilters() {
+  if (isMobile()) {
+    const cuisineVal = document.getElementById('m-cuisine').value;
+    const areaTier = document.getElementById('m-area').value;
+    const priceVal = document.getElementById('m-price').value;
+    const minRating = parseFloat(document.getElementById('m-rating').value) || 0;
+    const search = document.getElementById('m-search').value.toLowerCase().trim();
+    const micOnly = document.getElementById('m-michelin-chip').classList.contains('active');
+    const favOnly = document.getElementById('m-fav-chip').classList.contains('active');
+
+    return {
+      activePrices: priceVal === 'all' ? new Set([0,1,2,3,4]) : new Set([parseInt(priceVal), 0]),
+      cuisineVal, areaTier, minScore: 0, minRating, minReviews: 0,
+      search, micOnly, favOnly
+    };
+  }
+
+  const activePrices = new Set();
+  document.querySelectorAll('.price-toggles .toggle-btn.active').forEach(b => activePrices.add(parseInt(b.dataset.price)));
+  return {
+    activePrices,
+    cuisineVal: document.getElementById('cuisine-filter').value,
+    areaTier: document.getElementById('area-filter').value,
+    minScore: parseFloat(document.getElementById('score-filter').value) || 0,
+    minRating: parseFloat(document.getElementById('rating-filter').value) || 0,
+    minReviews: parseInt(document.getElementById('reviews-filter').value) || 0,
+    search: document.getElementById('search-input').value.toLowerCase().trim(),
+    micOnly: document.getElementById('michelin-filter').classList.contains('active'),
+    favOnly: document.getElementById('fav-filter').classList.contains('active'),
+  };
 }
 
 function applyFilters() {
-  const activePrices = new Set();
-  document.querySelectorAll('.price-toggles .toggle-btn.active').forEach(b => activePrices.add(parseInt(b.dataset.price)));
-  const cuisineVal = document.getElementById('cuisine-filter').value;
-  const areaTier = document.getElementById('area-filter').value;
-  const minScore = parseFloat(document.getElementById('score-filter').value) || 0;
-  const minRating = parseFloat(document.getElementById('rating-filter').value) || 0;
-  const minReviews = parseInt(document.getElementById('reviews-filter').value) || 0;
-  const search = document.getElementById('search-input').value.toLowerCase().trim();
-  const michelinOnly = document.getElementById('michelin-filter').classList.contains('active');
-  const favOnly = document.getElementById('fav-filter').classList.contains('active');
-
-  const filtered = ALL_DATA.filter(r => {
-    if (!activePrices.has(r.price_level)) return false;
-    if (cuisineVal !== 'all' && r.cuisine_type !== cuisineVal) return false;
-    if (areaTier !== 'all' && r.area_tier !== parseInt(areaTier)) return false;
-    if (r.score < minScore) return false;
-    if (minRating > 0 && r.avg_rating && r.avg_rating < minRating) return false;
-    if (minRating > 0 && !r.avg_rating) return false;
-    if (r.total_reviews < minReviews) return false;
-    if (michelinOnly && !r.michelin) return false;
-    if (favOnly && !isFav(r.name) && !r.is_favorite) return false;
-    if (search) {
+  const f = getFilters();
+  FILTERED = ALL_DATA.filter(r => {
+    if (!f.activePrices.has(r.price_level)) return false;
+    if (f.cuisineVal !== 'all' && r.cuisine_type !== f.cuisineVal) return false;
+    if (f.areaTier !== 'all' && r.area_tier !== parseInt(f.areaTier)) return false;
+    if (r.score < f.minScore) return false;
+    if (f.minRating > 0 && r.avg_rating && r.avg_rating < f.minRating) return false;
+    if (f.minRating > 0 && !r.avg_rating) return false;
+    if (r.total_reviews < f.minReviews) return false;
+    if (f.micOnly && !r.michelin) return false;
+    if (f.favOnly && !isFav(r.name) && !r.is_favorite) return false;
+    if (f.search) {
       const h = `${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();
-      if (!h.includes(search)) return false;
+      if (!h.includes(f.search)) return false;
     }
     return true;
   });
-
-  render(filtered);
+  render(FILTERED);
 }
 
 function render(data) {
-  document.getElementById('visible-count').textContent = data.length;
-  document.getElementById('sidebar-count').textContent = data.length;
+  // Update counts
+  const cnt = data.length;
+  document.getElementById('visible-count').textContent = cnt;
+  document.getElementById('sidebar-count').textContent = cnt;
+  document.getElementById('m-count').textContent = cnt;
+  document.getElementById('m-sheet-count').textContent = cnt + ' places';
 
+  // Map markers
   markerGroup.clearLayers();
   favMarkerGroup.clearLayers();
-
-  const cardList = document.getElementById('card-list');
-  cardList.innerHTML = data.map((r, i) => buildCard(r, i)).join('');
-
   data.forEach((r, i) => {
-    const isUserFav = isFav(r.name);
-    const isOrigFav = r.is_favorite;
-
-    if (isUserFav || isOrigFav) {
-      const heartMarker = L.marker([r.lat, r.lng], { icon: createHeartIcon(), zIndexOffset: 1000 });
-      heartMarker.bindPopup(buildPopup(r), { maxWidth: 340 });
-      heartMarker.on('click', () => highlightCard(i));
-      favMarkerGroup.addLayer(heartMarker);
-    } else {
-      const color = CUISINE_COLORS[r.cuisine_type] || CUISINE_COLORS['Other'];
-      const marker = L.marker([r.lat, r.lng], { icon: createIcon(color, r.score, !!r.michelin) });
-      marker.bindPopup(buildPopup(r), { maxWidth: 340 });
-      marker.on('click', () => highlightCard(i));
-      markerGroup.addLayer(marker);
-    }
+    const isF = isFav(r.name) || r.is_favorite;
+    const layer = isF ? favMarkerGroup : markerGroup;
+    const icon = isF ? createHeartIcon() : createIcon(CUISINE_COLORS[r.cuisine_type]||'#6b7280', r.score, !!r.michelin);
+    const m = L.marker([r.lat, r.lng], {icon, zIndexOffset: isF ? 1000 : 0});
+    m.bindPopup(buildPopup(r), {maxWidth: isMobile() ? 260 : 300});
+    m.on('click', () => highlightCard(i));
+    layer.addLayer(m);
   });
 
-  cardList.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target.tagName === 'A' || e.target.classList.contains('fav-btn')) return;
-      const lat = parseFloat(card.dataset.lat);
-      const lng = parseFloat(card.dataset.lng);
-      map.setView([lat, lng], 15);
-      openMarkerAt(lat, lng);
-      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
+  // Desktop sidebar
+  if (!isMobile()) {
+    const cl = document.getElementById('card-list');
+    cl.innerHTML = data.map((r,i) => buildCard(r,i)).join('');
+    cl.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.tagName==='A'||e.target.classList.contains('fav-btn')) return;
+        const lat=parseFloat(card.dataset.lat), lng=parseFloat(card.dataset.lng);
+        map.setView([lat,lng],15);
+        openAt(lat,lng);
+        document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+        card.classList.add('active');
+      });
     });
-  });
+  }
+
+  // Mobile bottom sheet
+  if (isMobile()) {
+    const sc = document.getElementById('sheet-content');
+    sc.innerHTML = data.map((r,i) => buildMobileCard(r,i)).join('');
+    sc.querySelectorAll('.m-card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.tagName==='A'||e.target.classList.contains('m-card-fav')) return;
+        const lat=parseFloat(card.dataset.lat), lng=parseFloat(card.dataset.lng);
+        map.setView([lat,lng],15);
+        openAt(lat,lng);
+        // Collapse sheet to peek
+        document.getElementById('bottom-sheet').style.height = '35vh';
+        setTimeout(()=>map.invalidateSize(),350);
+      });
+    });
+  }
 }
 
 function highlightCard(i) {
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-  const card = document.querySelector(`.card[data-idx="${i}"]`);
-  if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  if (!isMobile()) {
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+    const c=document.querySelector(`.card[data-idx="${i}"]`);
+    if(c){c.classList.add('active');c.scrollIntoView({behavior:'smooth',block:'center'});}
+  }
 }
 
-function openMarkerAt(lat, lng) {
-  [markerGroup, favMarkerGroup].forEach(group => {
-    group.eachLayer(layer => {
-      if (Math.abs(layer.getLatLng().lat - lat) < 0.0001 && Math.abs(layer.getLatLng().lng - lng) < 0.0001) {
-        layer.openPopup();
-      }
+function openAt(lat,lng) {
+  [markerGroup,favMarkerGroup].forEach(g=>{
+    g.eachLayer(l=>{
+      if(Math.abs(l.getLatLng().lat-lat)<.0001&&Math.abs(l.getLatLng().lng-lng)<.0001) l.openPopup();
     });
   });
 }
 
+// ── Bottom Sheet Drag ──
+function initBottomSheet() {
+  const sheet = document.getElementById('bottom-sheet');
+  const handle = document.getElementById('sheet-handle');
+  let startY, startH, dragging = false;
+
+  function onStart(e) {
+    dragging = true;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    startH = sheet.offsetHeight;
+    sheet.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const delta = startY - y;
+    const newH = Math.max(80, Math.min(window.innerHeight * 0.85, startH + delta));
+    sheet.style.height = newH + 'px';
+  }
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = 'height 0.3s ease';
+    const h = sheet.offsetHeight;
+    const vh = window.innerHeight;
+    // Snap to: peek (35vh), half (55vh), full (85vh)
+    if (h < vh * 0.25) sheet.style.height = '80px'; // collapsed
+    else if (h < vh * 0.45) sheet.style.height = '35vh'; // peek
+    else if (h < vh * 0.7) sheet.style.height = '55vh'; // half
+    else sheet.style.height = '85vh'; // full
+    setTimeout(() => map.invalidateSize(), 350);
+  }
+
+  handle.addEventListener('touchstart', onStart, {passive: true});
+  handle.addEventListener('mousedown', onStart);
+  document.addEventListener('touchmove', onMove, {passive: false});
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchend', onEnd);
+  document.addEventListener('mouseup', onEnd);
+}
+
+// ── Init ──
 async function init() {
   initMap();
   const resp = await fetch('restaurants.json');
   ALL_DATA = await resp.json();
   document.getElementById('total-count').textContent = ALL_DATA.length;
 
-  // Cuisine dropdown
-  const types = [...new Set(ALL_DATA.map(r => r.cuisine_type))].sort();
-  const cuisineSelect = document.getElementById('cuisine-filter');
-  types.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    cuisineSelect.appendChild(opt);
+  // Populate cuisine dropdowns
+  const types = [...new Set(ALL_DATA.map(r=>r.cuisine_type))].sort();
+  [document.getElementById('cuisine-filter'), document.getElementById('m-cuisine')].forEach(sel => {
+    types.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
   });
 
-  // Event listeners
+  // Desktop events
   document.querySelectorAll('.price-toggles .toggle-btn').forEach(b =>
-    b.addEventListener('click', () => { b.classList.toggle('active'); applyFilters(); }));
-
-  document.getElementById('michelin-filter').addEventListener('click', function() {
-    this.classList.toggle('active'); applyFilters();
-  });
-  document.getElementById('fav-filter').addEventListener('click', function() {
-    this.classList.toggle('active'); applyFilters();
-  });
-
-  ['area-filter','cuisine-filter','score-filter','rating-filter','reviews-filter'].forEach(id =>
-    document.getElementById(id).addEventListener('change', applyFilters));
-  document.getElementById('search-input').addEventListener('input', applyFilters);
-
-  document.getElementById('reset-filters').addEventListener('click', () => {
-    document.querySelectorAll('.price-toggles .toggle-btn').forEach(b =>
-      b.classList.toggle('active', ['2','3','4','0'].includes(b.dataset.price)));
-    document.getElementById('cuisine-filter').value = 'all';
+    b.addEventListener('click',()=>{b.classList.toggle('active');applyFilters();}));
+  document.getElementById('michelin-filter').addEventListener('click',function(){this.classList.toggle('active');applyFilters();});
+  document.getElementById('fav-filter').addEventListener('click',function(){this.classList.toggle('active');applyFilters();});
+  ['cuisine-filter','area-filter','score-filter','rating-filter','reviews-filter'].forEach(id=>
+    document.getElementById(id).addEventListener('change',applyFilters));
+  document.getElementById('search-input').addEventListener('input',applyFilters);
+  document.getElementById('reset-filters').addEventListener('click',()=>{
+    document.querySelectorAll('.price-toggles .toggle-btn').forEach(b=>b.classList.toggle('active',['2','3','4','0'].includes(b.dataset.price)));
+    document.getElementById('cuisine-filter').value='all';
     document.getElementById('michelin-filter').classList.remove('active');
     document.getElementById('fav-filter').classList.remove('active');
-    document.getElementById('area-filter').value = 'all';
-    document.getElementById('score-filter').value = '50';
-    document.getElementById('rating-filter').value = '4.0';
-    document.getElementById('reviews-filter').value = '100';
-    document.getElementById('search-input').value = '';
-    map.setView([34.05, -118.40], 11);
-    applyFilters();
+    document.getElementById('area-filter').value='all';
+    document.getElementById('score-filter').value='50';
+    document.getElementById('rating-filter').value='4.0';
+    document.getElementById('reviews-filter').value='100';
+    document.getElementById('search-input').value='';
+    map.setView([34.05,-118.40],11); applyFilters();
   });
 
-  applyFilters();
-
-  // Mobile: filter toggle
-  const filterToggle = document.getElementById('filter-toggle');
-  const filtersPanel = document.getElementById('filters-panel');
-  filterToggle.addEventListener('click', () => {
-    filtersPanel.classList.toggle('open');
-    filterToggle.classList.toggle('open');
+  // Mobile events
+  ['m-cuisine','m-area','m-price','m-rating'].forEach(id=>
+    document.getElementById(id).addEventListener('change',applyFilters));
+  let mSearchTimer;
+  document.getElementById('m-search').addEventListener('input',()=>{
+    clearTimeout(mSearchTimer); mSearchTimer=setTimeout(applyFilters,250);
   });
+  document.getElementById('m-michelin-chip').addEventListener('click',function(){this.classList.toggle('active');applyFilters();});
+  document.getElementById('m-fav-chip').addEventListener('click',function(){this.classList.toggle('active');applyFilters();});
 
-  // Mobile: map/list tabs
-  const tabMap = document.getElementById('tab-map');
-  const tabList = document.getElementById('tab-list');
-  const mapEl = document.getElementById('map');
-  const sidebarEl = document.getElementById('sidebar-panel');
-
-  tabMap.addEventListener('click', () => {
-    tabMap.classList.add('active'); tabList.classList.remove('active');
-    mapEl.classList.remove('mobile-hidden'); sidebarEl.classList.remove('mobile-visible');
-    setTimeout(() => map.invalidateSize(), 50);
-  });
-  tabList.addEventListener('click', () => {
-    tabList.classList.add('active'); tabMap.classList.remove('active');
-    mapEl.classList.add('mobile-hidden'); sidebarEl.classList.add('mobile-visible');
-  });
-
-  // Auto-close filters on mobile after changing a select
-  ['area-filter','cuisine-filter','score-filter','rating-filter','reviews-filter'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => {
-      if (window.innerWidth <= 900) {
-        filtersPanel.classList.remove('open');
-        filterToggle.classList.remove('open');
+  // Legend click-to-filter
+  document.querySelectorAll('.legend-item[data-filter]').forEach(item => {
+    item.addEventListener('click', () => {
+      const f = item.dataset.filter;
+      if (f === 'fav') {
+        if (isMobile()) document.getElementById('m-fav-chip').classList.toggle('active');
+        else document.getElementById('fav-filter').classList.toggle('active');
+      } else if (f === 'michelin') {
+        if (isMobile()) document.getElementById('m-michelin-chip').classList.toggle('active');
+        else document.getElementById('michelin-filter').classList.toggle('active');
+      } else {
+        // Cuisine filter
+        const sel = isMobile() ? document.getElementById('m-cuisine') : document.getElementById('cuisine-filter');
+        sel.value = sel.value === f ? 'all' : f;
       }
+      applyFilters();
     });
   });
+
+  initBottomSheet();
+  applyFilters();
 }
 
 init();
