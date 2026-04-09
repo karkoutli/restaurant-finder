@@ -189,7 +189,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 
 <div class="header">
   <h1>Sofia's Spots</h1>
-  <div class="sub">curated restaurants that match your vibe</div>
+  <div class="sub">find your next spot</div>
 </div>
 
 <div class="filters">
@@ -246,7 +246,15 @@ function togF(n,e){if(e)e.stopPropagation();favs[n]?delete favs[n]:favs[n]=true;
 function stars(r){return r?'<span class="stars">★</span> '+r:''}
 function esc(s){return s.replace(/'/g,"\\'")}
 function bookUrl(r){return`https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}`}
-function menuUrl(r){return r.yelp_menu_url||r.website||`https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}`}
+function menuUrl(r){return r.yelp_menu_url||r.website||`https://www.google.com/search?q=${encodeURIComponent(r.name+' menu')}`}
+function instaUrl(r){return`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(r.name)}`}
+function ratingDisplay(r){
+  let s='';
+  if(r.avg_rating)s+=`<span class="stars">★</span> ${r.avg_rating}`;
+  if(r.rating_google&&r.rating_yelp)s+=` <span style="color:var(--text-muted);font-size:10px">(G:${r.rating_google} Y:${r.rating_yelp})</span>`;
+  else if(r.total_reviews)s+=` <span style="color:var(--text-muted)">(${r.total_reviews.toLocaleString()})</span>`;
+  return s;
+}
 
 function cardB(r,i){
   const h=heights[i%heights.length];
@@ -258,8 +266,8 @@ function cardB(r,i){
     <div class="body">
       <div class="name">${r.name}</div>
       <div class="cuisine">${r.cuisine_type}</div>
-      <div class="info">${stars(r.avg_rating)} <span style="color:var(--text-muted)">(${(r.total_reviews||0).toLocaleString()})</span> · <span class="price">${r.price_display}</span> · ${r.area_name}</div>
-      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>
+      <div class="info">${ratingDisplay(r)} · <span class="price">${r.price_display}</span> · ${r.area_name}</div>
+      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a><a href="${instaUrl(r)}" target="_blank">IG</a></div>
     </div></div>`;
 }
 
@@ -270,8 +278,8 @@ function cardC(r,i){
     ${img}<div class="body">
       <div class="top"><div class="name">${r.name}${r.michelin?`<span class="badge-inline">${r.michelin}</span>`:''}</div><button class="fav ${sv?'on':''}" onclick="togF('${esc(r.name)}',event)">${sv?'♥':'♡'}</button></div>
       <div class="cuisine">${r.cuisine_type}</div>
-      <div class="info">${stars(r.avg_rating)} (${(r.total_reviews||0).toLocaleString()}) · ${r.price_display} · ${r.area_name}</div>
-      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>
+      <div class="info">${ratingDisplay(r)} · ${r.price_display} · ${r.area_name}</div>
+      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a><a href="${instaUrl(r)}" target="_blank">IG</a></div>
     </div></div>`;
 }
 
@@ -298,6 +306,7 @@ function getF(){
 function applyFilters(){
   const f=getF();
   FILTERED=ALL.filter(r=>{
+    if(r.is_disliked)return false;  // She tried it and didn't like it
     if(f.vibe&&!r.is_favorite&&!isF(r.name)){
       if(!VIBE.has(r.cuisine_type))return false;
       if(r.price_level===1)return false;
@@ -378,8 +387,8 @@ function openModal(i){
       <div class="modal-name">${r.name}</div>
       <div class="modal-cuisine">${r.cuisine_type}</div>
       <div class="modal-stats">
-        <div class="modal-stat"><span class="label">Rating</span><span class="val"><span class="stars">★</span> ${r.avg_rating||'—'}</span></div>
-        <div class="modal-stat"><span class="label">Reviews</span><span class="val">${(r.total_reviews||0).toLocaleString()}</span></div>
+        <div class="modal-stat"><span class="label">Rating</span><span class="val"><span class="stars">★</span> ${r.avg_rating||'—'}${r.rating_google&&r.rating_yelp?` <span style="font-size:10px;color:var(--text-muted)">(G:${r.rating_google} Y:${r.rating_yelp})</span>`:''}</span></div>
+        <div class="modal-stat"><span class="label">Reviews</span><span class="val">${(r.total_reviews||0).toLocaleString()}${r.review_count_google&&r.review_count_yelp?` <span style="font-size:10px;color:var(--text-muted)">(G:${r.review_count_google} Y:${r.review_count_yelp})</span>`:''}</span></div>
         <div class="modal-stat"><span class="label">Price</span><span class="val">${r.price_display}</span></div>
         <div class="modal-stat"><span class="label">Vibe Score</span><span class="val">${r.score}/100</span></div>
       </div>
@@ -392,11 +401,14 @@ function openModal(i){
       </div>
       <div class="modal-cats">${r.categories.map(c=>`<span class="modal-cat">${c}</span>`).join('')}</div>
       <div class="modal-address">${r.area_name} · ${r.address}</div>
+      ${r.description?`<div style="font-size:12px;color:var(--text-soft);line-height:1.5;margin-bottom:14px;font-style:italic">${r.description}</div>`:''}
+      ${(r.extra_photos&&r.extra_photos.length)?`<div class="modal-photos">${r.extra_photos.map(p=>`<img src="${p}" loading="lazy" style="height:90px">`).join('')}</div>`:''}
       ${photosUrl?`<a class="modal-photos-link" href="${photosUrl}" target="_blank">View all photos on Yelp →</a>`:''}
       <div class="modal-links">
         <a class="modal-link primary" href="${bookUrl(r)}" target="_blank">Book a Table</a>
         ${r.yelp_url?`<a class="modal-link" href="${r.yelp_url}" target="_blank">Yelp</a>`:''}
         <a class="modal-link" href="${menuUrl(r)}" target="_blank">Menu</a>
+        <a class="modal-link" href="${instaUrl(r)}" target="_blank">Instagram</a>
         <a class="modal-link" href="https://www.google.com/maps/search/${encodeURIComponent(r.name+' '+r.address)}" target="_blank">Directions</a>
       </div>
     </div>`;
@@ -410,11 +422,15 @@ function closeModal(){
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
 function setView(v){
-  ['grid','list','map'].forEach(id=>{
-    document.getElementById(id+'-view').style.display=id===v?'':'none';
-    document.getElementById('btn-'+id).classList.toggle('active',id===v);
-  });
+  document.getElementById('grid-view').style.display=v==='grid'?'block':'none';
+  document.getElementById('list-view').style.display=v==='list'?'block':'none';
+  document.getElementById('map-view').style.display=v==='map'?'block':'none';
+  document.getElementById('recs-section').style.display=(v==='grid'&&document.getElementById('recs-scroll').children.length>0)?'block':'none';
+  document.getElementById('btn-grid').classList.toggle('active',v==='grid');
+  document.getElementById('btn-list').classList.toggle('active',v==='list');
+  document.getElementById('btn-map').classList.toggle('active',v==='map');
   if(v==='map'){initMap();setTimeout(()=>{map.invalidateSize();renderMap()},100)}
+  if(v==='list'){renderList()}
 }
 
 async function init(){
