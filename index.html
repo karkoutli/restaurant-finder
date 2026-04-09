@@ -64,14 +64,7 @@
   .toggle-btn.michelin.active { background: #dc262622; border-color: #dc2626; color: #dc2626; }
   .toggle-btn.fav-filter.active { background: #ef444422; border-color: #ef4444; color: #ef4444; }
 
-  .price-toggles, .cuisine-pills { display: flex; gap: 4px; flex-wrap: wrap; }
-  .cuisine-pill {
-    background: #0f0f1a; border: 1px solid #333; color: #999;
-    padding: 4px 10px; border-radius: 20px; font-size: 11px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .cuisine-pill.active { background: #c084fc22; border-color: #c084fc; color: #c084fc; }
-  .cuisine-pill:hover { border-color: #c084fc88; }
+  .price-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
 
   .reset-btn {
     background: transparent; border: 1px solid #555; color: #999;
@@ -284,7 +277,6 @@
     .filter-group { width: 100%; }
     .filter-group select, .filter-group input[type="text"] { flex: 1; }
     .price-toggles { flex-wrap: wrap; }
-    .cuisine-pills { max-height: 80px; overflow-y: auto; }
 
     .card { padding: 10px 12px; }
     .card-name { font-size: 14px; }
@@ -299,7 +291,7 @@
 <div class="header">
   <div>
     <h1>Restaurant Finder</h1>
-    <div class="subtitle">LA restaurants that match Sofia's vibe</div>
+    <div class="subtitle">Restaurants that Match Sofias Vibe</div>
   </div>
   <div class="stats"><span id="visible-count">0</span> of <span id="total-count">0</span> restaurants</div>
 </div>
@@ -319,7 +311,9 @@
 
   <div class="filter-group">
     <label>Cuisine</label>
-    <div class="cuisine-pills" id="cuisine-pills"></div>
+    <select id="cuisine-filter">
+      <option value="all">All Cuisines</option>
+    </select>
   </div>
 
   <div class="filter-group">
@@ -555,8 +549,7 @@ function buildCard(r, idx) {
 function applyFilters() {
   const activePrices = new Set();
   document.querySelectorAll('.price-toggles .toggle-btn.active').forEach(b => activePrices.add(parseInt(b.dataset.price)));
-  const activeCuisines = new Set();
-  document.querySelectorAll('.cuisine-pill.active').forEach(p => activeCuisines.add(p.dataset.cuisine));
+  const cuisineVal = document.getElementById('cuisine-filter').value;
   const areaTier = document.getElementById('area-filter').value;
   const minScore = parseFloat(document.getElementById('score-filter').value) || 0;
   const minRating = parseFloat(document.getElementById('rating-filter').value) || 0;
@@ -567,7 +560,7 @@ function applyFilters() {
 
   const filtered = ALL_DATA.filter(r => {
     if (!activePrices.has(r.price_level)) return false;
-    if (activeCuisines.size > 0 && !activeCuisines.has(r.cuisine_type)) return false;
+    if (cuisineVal !== 'all' && r.cuisine_type !== cuisineVal) return false;
     if (areaTier !== 'all' && r.area_tier !== parseInt(areaTier)) return false;
     if (r.score < minScore) return false;
     if (minRating > 0 && r.avg_rating && r.avg_rating < minRating) return false;
@@ -648,14 +641,13 @@ async function init() {
   ALL_DATA = await resp.json();
   document.getElementById('total-count').textContent = ALL_DATA.length;
 
-  // Cuisine pills
+  // Cuisine dropdown
   const types = [...new Set(ALL_DATA.map(r => r.cuisine_type))].sort();
-  const pills = document.getElementById('cuisine-pills');
+  const cuisineSelect = document.getElementById('cuisine-filter');
   types.forEach(c => {
-    const p = document.createElement('button');
-    p.className = 'cuisine-pill'; p.dataset.cuisine = c; p.textContent = c;
-    p.addEventListener('click', () => { p.classList.toggle('active'); applyFilters(); });
-    pills.appendChild(p);
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    cuisineSelect.appendChild(opt);
   });
 
   // Event listeners
@@ -669,14 +661,14 @@ async function init() {
     this.classList.toggle('active'); applyFilters();
   });
 
-  ['area-filter','score-filter','rating-filter','reviews-filter'].forEach(id =>
+  ['area-filter','cuisine-filter','score-filter','rating-filter','reviews-filter'].forEach(id =>
     document.getElementById(id).addEventListener('change', applyFilters));
   document.getElementById('search-input').addEventListener('input', applyFilters);
 
   document.getElementById('reset-filters').addEventListener('click', () => {
     document.querySelectorAll('.price-toggles .toggle-btn').forEach(b =>
       b.classList.toggle('active', ['2','3','4','0'].includes(b.dataset.price)));
-    document.querySelectorAll('.cuisine-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('cuisine-filter').value = 'all';
     document.getElementById('michelin-filter').classList.remove('active');
     document.getElementById('fav-filter').classList.remove('active');
     document.getElementById('area-filter').value = 'all';
@@ -715,7 +707,7 @@ async function init() {
   });
 
   // Auto-close filters on mobile after changing a select
-  ['area-filter','score-filter','rating-filter','reviews-filter'].forEach(id => {
+  ['area-filter','cuisine-filter','score-filter','rating-filter','reviews-filter'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       if (window.innerWidth <= 900) {
         filtersPanel.classList.remove('open');
