@@ -194,7 +194,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 
 <div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
-  <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
+  <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option><option value="coffee">Coffee & Matcha</option></select></div>
   <div class="chip"><select id="f-area">
     <option value="all">All SoCal</option>
     <optgroup label="── LA County ──">
@@ -342,7 +342,10 @@ function applyFilters(){
         if(!r.avg_rating)return false;
         if((r.total_reviews||0)<50)return false;
       }
-      if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
+      if(f.cuisine==='coffee'){
+        var cats=(r.categories||[]).join(' ').toLowerCase()+' '+r.name.toLowerCase()+(r.cuisine_type||'').toLowerCase();
+        if(!cats.match(/coffee|matcha|tea |cafe|café|latte|espresso/))return false;
+      } else if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
       if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
     }
 
@@ -369,6 +372,7 @@ function applyFilters(){
     if(f.search){const h=`${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();if(!h.includes(f.search))return false}
     return true;
   });
+  if(f.takeout)FILTERED.sort((a,b)=>(a.price_level||5)-(b.price_level||5)||(b.avg_rating||0)-(a.avg_rating||0));
   document.getElementById('count').textContent=FILTERED.length;
   renderRecs();renderGrid();renderList();
   if(mapReady)renderMap();
@@ -377,12 +381,12 @@ function applyFilters(){
 function renderRecs(){
   const scroll=document.getElementById('recs-scroll');
   // Show recommended spots that aren't favorites — with images, sorted by score
-  const recs=FILTERED.filter(r=>r.is_recommended&&!r.is_favorite&&!r.is_disliked&&r.image_url).slice(0,15);
+  // Recs pull from ALL data, not just current filter — so you always see recs regardless of area
+  const recs=ALL.filter(r=>r.is_recommended&&!r.is_favorite&&!r.is_disliked&&r.image_url).slice(0,20);
   if(recs.length<3){document.getElementById('recs-section').style.display='none';return}
-  document.getElementById('recs-section').style.display='';
+  document.getElementById('recs-section').style.display='block';window._recs=recs;
   scroll.innerHTML=recs.map((r,i)=>{
-    const idx=FILTERED.indexOf(r);
-    return`<div class="rec-card" onclick="openModal(${idx})">
+    return`<div class="rec-card" onclick="openRecModal(${i})">
       <img src="${r.image_url}" loading="lazy" onerror="this.outerHTML='<div class=rec-ph>✦</div>'">
       <div class="rec-tag">${r.michelin||'Pick for you'}</div>
       <div class="rec-body">
@@ -464,11 +468,20 @@ function closeModal(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
+function openRecModal(i){
+  if(!window._recs||!window._recs[i])return;
+  var r=window._recs[i];
+  // Temporarily add to FILTERED so openModal works
+  var tempIdx=FILTERED.length;
+  FILTERED.push(r);
+  openModal(tempIdx);
+}
+
 function setView(v){
   document.getElementById('grid-view').style.display=v==='grid'?'block':'none';
   document.getElementById('list-view').style.display=v==='list'?'block':'none';
   document.getElementById('map-view').style.display=v==='map'?'block':'none';
-  document.getElementById('recs-section').style.display=(v==='grid'&&document.getElementById('recs-scroll').children.length>0)?'block':'none';
+  document.getElementById('recs-section').style.display=v==='grid'?'block':'none';
   document.getElementById('btn-grid').classList.toggle('active',v==='grid');
   document.getElementById('btn-list').classList.toggle('active',v==='list');
   document.getElementById('btn-map').classList.toggle('active',v==='map');
