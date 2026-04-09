@@ -195,7 +195,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 <div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
-  <div class="chip"><select id="f-area"><option value="1" selected>West LA</option><option value="all">All Areas</option><option value="malibu">Malibu</option><option value="dtla">DTLA</option><option value="eastla">East LA</option><option value="glendale">Glendale</option><option value="longbeach">Long Beach</option><option value="3">Valley</option><option value="irvine">Irvine</option><option value="newport">Newport Beach</option><option value="costamesa">Costa Mesa</option><option value="4">All OC</option></select></div>
+  <div class="chip"><select id="f-area">
+    <option value="all">All SoCal</option>
+    <optgroup label="── LA County ──">
+      <option value="1" selected>West LA</option>
+      <option value="malibu">Malibu</option>
+      <option value="dtla">DTLA</option>
+      <option value="eastla">East LA</option>
+      <option value="glendale">Glendale / Pasadena</option>
+      <option value="3">The Valley</option>
+    </optgroup>
+    <optgroup label="── Long Beach ──">
+      <option value="longbeach">Long Beach</option>
+    </optgroup>
+    <optgroup label="── Orange County ──">
+      <option value="4">All OC</option>
+      <option value="irvine">Irvine</option>
+      <option value="newport">Newport Beach</option>
+      <option value="costamesa">Costa Mesa</option>
+    </optgroup>
+  </select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
   <div class="chip" id="takeout-chip">Takeout</div>
