@@ -5,291 +5,128 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Sofia's Spots</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
-  --cream: #F8F4EF;
-  --card: #FFFFFF;
-  --warm-bg: #F3EDE6;
-  --blush: #E8D5CE;
-  --blush-light: #F5ECE7;
-  --taupe: #B8A99A;
-  --taupe-dark: #8C7E72;
-  --gold: #C5A972;
-  --gold-light: #D4BC8B;
-  --text: #2C2420;
-  --text-soft: #6B5E54;
-  --text-muted: #9C8E82;
-  --pink: #D4A0A0;
-  --pink-soft: #E8C4C4;
-  --pink-bg: #F9F0EE;
-  --heart: #C97070;
-  --border: #E8E0D8;
-  --shadow: 0 2px 12px rgba(44, 36, 32, 0.06);
-  --shadow-hover: 0 8px 30px rgba(44, 36, 32, 0.12);
-  --radius: 14px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cream: #FBF5F3; --card: #FFFFFF; --warm-bg: #F5EDEA;
+  --blush: #EACED0; --blush-light: #F7E8EA;
+  --taupe: #C4A9A4; --taupe-dark: #8C7072;
+  --gold: #C5A972; --text: #2C2420;
+  --text-soft: #6B5E54; --text-muted: #A08E88;
+  --pink: #D4919A; --pink-soft: #E8B8BF;
+  --pink-bg: #FCF0F1; --pink-accent: #CF7E8A;
+  --heart: #C96B78; --border: #EDDDD9;
+  --shadow: 0 1px 6px rgba(44,36,32,0.06);
+  --shadow-hover: 0 6px 24px rgba(44,36,32,0.1);
+  --radius: 16px;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'DM Sans', -apple-system, sans-serif;
-  background: var(--cream); color: var(--text);
-  min-height: 100vh; min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased}
 
 /* ── Header ── */
-.header {
-  text-align: center; padding: 32px 20px 16px;
-  background: var(--cream);
-}
-.header h1 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 32px; font-weight: 300; letter-spacing: 2px;
-  color: var(--text); text-transform: uppercase;
-}
-.header .subtitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 15px; font-weight: 300; font-style: italic;
-  color: var(--taupe-dark); margin-top: 4px; letter-spacing: 0.5px;
-}
+.header{text-align:center;padding:28px 20px 12px}
+.header h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;letter-spacing:2px;color:var(--pink-accent);text-transform:uppercase}
+.header .sub{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--pink);margin-top:3px;letter-spacing:.5px}
 
 /* ── Filter Bar ── */
-.filter-bar {
-  display: flex; gap: 8px; padding: 12px 20px 16px;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; justify-content: center; flex-wrap: wrap;
-}
-.filter-bar::-webkit-scrollbar { display: none; }
-
-.chip {
-  background: var(--card); border: 1px solid var(--border);
-  padding: 8px 16px; border-radius: 24px;
-  font-size: 13px; font-weight: 500; color: var(--text-soft);
-  cursor: pointer; transition: all 0.2s; white-space: nowrap;
-  letter-spacing: 0.3px;
-}
-.chip:hover { border-color: var(--taupe); }
-.chip.active {
-  background: var(--text); color: var(--cream);
-  border-color: var(--text);
-}
-.chip select {
-  background: transparent; border: none; color: inherit;
-  font-size: 13px; font-weight: 500; font-family: inherit;
-  cursor: pointer; outline: none;
-  -webkit-appearance: none; appearance: none;
-}
-.chip select option { background: var(--card); color: var(--text); }
-
-.search-wrap {
-  position: relative; flex-shrink: 0;
-}
-.search-wrap input {
-  background: var(--card); border: 1px solid var(--border);
-  padding: 8px 16px 8px 36px; border-radius: 24px;
-  font-size: 13px; font-family: inherit; color: var(--text);
-  width: 180px; outline: none; transition: border-color 0.2s;
-}
-.search-wrap input:focus { border-color: var(--taupe-dark); }
-.search-wrap input::placeholder { color: var(--taupe); }
-.search-wrap::before {
-  content: ""; position: absolute; left: 14px; top: 50%;
-  transform: translateY(-50%);
-  width: 14px; height: 14px;
-  border: 2px solid var(--taupe); border-radius: 50%;
-}
+.filters{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;justify-content:center;flex-wrap:wrap}
+.filters::-webkit-scrollbar{display:none}
+.chip{background:var(--card);border:1px solid var(--border);padding:7px 15px;border-radius:24px;font-size:12px;font-weight:500;color:var(--text-soft);cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:.3px}
+.chip:hover{border-color:var(--pink-soft)}
+.chip.active{background:var(--pink-accent);color:#fff;border-color:var(--pink-accent)}
+.chip select{background:transparent;border:none;color:inherit;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
+.chip select option{background:var(--card);color:var(--text)}
+.search-wrap{position:relative}
+.search-wrap input{background:var(--card);border:1px solid var(--border);padding:7px 14px 7px 32px;border-radius:24px;font-size:12px;font-family:inherit;color:var(--text);width:150px;outline:none}
+.search-wrap input:focus{border-color:var(--pink-accent)}
+.search-wrap input::placeholder{color:var(--taupe)}
+.search-wrap::before{content:"⌕";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--pink-soft)}
 
 /* ── View Toggle ── */
-.view-toggle {
-  display: flex; justify-content: center; padding: 0 20px 20px; gap: 4px;
-}
-.view-btn {
-  background: transparent; border: 1px solid var(--border);
-  padding: 8px 24px; border-radius: 24px;
-  font-size: 13px; font-weight: 500; font-family: inherit;
-  color: var(--text-soft); cursor: pointer; transition: all 0.2s;
-}
-.view-btn.active {
-  background: var(--text); color: var(--cream); border-color: var(--text);
-}
-.count-badge {
-  font-size: 12px; color: var(--taupe-dark); padding: 0 20px 16px;
-  text-align: center; font-weight: 400;
-}
+.view-bar{display:flex;justify-content:center;align-items:center;gap:6px;padding:4px 20px 16px}
+.view-btn{background:transparent;border:1px solid var(--border);padding:7px 20px;border-radius:24px;font-size:12px;font-weight:500;font-family:inherit;color:var(--text-soft);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.view-btn.active{background:var(--pink-accent);color:#fff;border-color:var(--pink-accent)}
+.view-btn svg{width:14px;height:14px;fill:currentColor}
+.count-badge{font-size:11px;color:var(--text-muted);margin-left:8px}
 
-/* ── Masonry Grid ── */
-.grid-view { padding: 0 16px 40px; }
-.masonry {
-  column-count: 4; column-gap: 16px;
-}
-@media (max-width: 1200px) { .masonry { column-count: 3; } }
-@media (max-width: 768px) { .masonry { column-count: 2; column-gap: 12px; } }
-@media (max-width: 480px) { .masonry { column-count: 2; column-gap: 10px; } }
+/* ══ GRID VIEW (Option B) ══ */
+.grid-view{padding:0 14px 40px}
+.masonry{column-count:4;column-gap:14px}
+@media(max-width:1200px){.masonry{column-count:3}}
+@media(max-width:768px){.masonry{column-count:2;column-gap:10px}}
 
-/* ── Restaurant Card ── */
-.r-card {
-  break-inside: avoid; margin-bottom: 16px;
-  background: var(--card); border-radius: var(--radius);
-  overflow: hidden; cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-  box-shadow: var(--shadow);
-  position: relative;
-}
-.r-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-@media (max-width: 768px) { .r-card { margin-bottom: 12px; } }
+.card-b{break-inside:avoid;margin-bottom:14px;background:var(--card);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .3s;box-shadow:var(--shadow);position:relative}
+.card-b:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.card-b img{width:100%;display:block;object-fit:cover;background:linear-gradient(135deg,var(--blush-light),var(--pink-bg));min-height:120px}
+.card-b .img-ph{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,var(--blush-light),var(--pink-bg));display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--pink-soft)}
+.card-b .save{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.88);border:none;font-size:15px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;backdrop-filter:blur(4px)}
+.card-b:hover .save{opacity:1}
+.card-b .save.on{opacity:1;color:var(--heart)}
+.card-b .badge{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.9);backdrop-filter:blur(4px);padding:3px 10px;border-radius:12px;font-size:9px;font-weight:600;color:var(--heart);letter-spacing:.5px}
+.card-b .body{padding:10px 12px 14px}
+.card-b .name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:500;color:var(--text);line-height:1.2;margin-bottom:3px}
+.card-b .cuisine{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--pink-accent);font-weight:500;margin-bottom:5px}
+.card-b .info{font-size:11px;color:var(--text-soft);line-height:1.5;margin-bottom:6px}
+.card-b .info .stars{color:var(--gold)}
+.card-b .info .price{color:var(--taupe-dark);font-weight:500}
+.card-b .links{display:flex;gap:5px}
+.card-b .links a{font-size:9px;color:var(--pink-accent);text-decoration:none;padding:3px 10px;border:1px solid var(--blush);border-radius:14px;font-weight:500;letter-spacing:.3px;transition:all .15s}
+.card-b .links a:hover{background:var(--pink-bg);border-color:var(--pink-accent)}
 
-.r-card-img {
-  width: 100%; display: block;
-  aspect-ratio: auto; /* natural ratio like Pinterest */
-  object-fit: cover;
-  background: var(--warm-bg);
-  min-height: 120px;
-}
-.r-card-img-placeholder {
-  width: 100%; aspect-ratio: 4/3;
-  background: linear-gradient(135deg, var(--warm-bg), var(--blush-light));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; color: var(--taupe);
-}
+/* ══ LIST VIEW (Option C) ══ */
+.list-view{display:none;max-width:700px;margin:0 auto;padding:0 14px 40px}
+.list-view .list{display:flex;flex-direction:column;gap:12px}
 
-/* Save button — appears on hover */
-.r-save {
-  position: absolute; top: 10px; right: 10px;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(255,255,255,0.9); border: none;
-  font-size: 16px; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; color: var(--taupe);
-  backdrop-filter: blur(4px);
-}
-.r-card:hover .r-save { opacity: 1; }
-.r-save.saved { opacity: 1; color: var(--heart); }
-.r-save:hover { transform: scale(1.1); }
+.card-c{display:flex;gap:12px;background:var(--card);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .3s;box-shadow:var(--shadow)}
+.card-c:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover)}
+.card-c img{width:110px;height:110px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--blush-light),var(--pink-bg))}
+.card-c .img-ph{width:110px;height:110px;flex-shrink:0;background:linear-gradient(135deg,var(--blush-light),var(--pink-bg));display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--pink-soft)}
+.card-c .body{padding:10px 12px 10px 0;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.card-c .top{display:flex;justify-content:space-between;align-items:flex-start}
+.card-c .name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:500;color:var(--text);line-height:1.2;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-c .fav{background:none;border:none;font-size:16px;color:var(--text-muted);cursor:pointer;flex-shrink:0;padding:0 2px;transition:color .15s}
+.card-c .fav.on{color:var(--heart)}
+.card-c .cuisine{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--pink-accent);font-weight:500;margin:2px 0 4px}
+.card-c .info{font-size:11px;color:var(--text-soft);line-height:1.4}
+.card-c .info .stars{color:var(--gold)}
+.card-c .badge-inline{font-size:9px;font-weight:600;color:var(--heart);background:var(--pink-bg);padding:1px 6px;border-radius:8px;margin-left:4px}
+.card-c .links{display:flex;gap:5px;margin-top:5px}
+.card-c .links a{font-size:9px;color:var(--pink-accent);text-decoration:none;padding:2px 8px;border:1px solid var(--blush);border-radius:12px;font-weight:500;transition:all .15s}
+.card-c .links a:hover{background:var(--pink-bg);border-color:var(--pink-accent)}
 
-/* Michelin badge */
-.r-michelin {
-  position: absolute; top: 10px; left: 10px;
-  background: rgba(255,255,255,0.92); backdrop-filter: blur(4px);
-  padding: 3px 10px; border-radius: 12px;
-  font-size: 10px; font-weight: 600; color: var(--heart);
-  letter-spacing: 0.5px;
-}
+/* ══ MAP VIEW ══ */
+.map-view{display:none;padding:0 14px 40px}
+.map-wrap{width:100%;height:65vh;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+#map{width:100%;height:100%}
+.leaflet-popup-content-wrapper{background:var(--card)!important;color:var(--text)!important;border-radius:12px!important;box-shadow:var(--shadow-hover)!important;font-family:'DM Sans',sans-serif!important}
+.leaflet-popup-tip{background:var(--card)!important}
+.leaflet-popup-content{margin:10px!important}
+.pop-img{width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px}
+.pop-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:500;margin-bottom:2px}
+.pop-cuisine{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--pink-accent)}
+.pop-meta{font-size:11px;color:var(--text-soft);margin-top:4px;line-height:1.5}
+.pop-meta .stars{color:var(--gold)}
+.pop-links{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap}
+.pop-links a{font-size:9px;color:var(--pink-accent);text-decoration:none;padding:3px 8px;border:1px solid var(--blush);border-radius:12px}
 
-.r-card-body { padding: 12px 14px 14px; }
+.scroll-sentinel{height:1px}
 
-.r-card-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px; font-weight: 500; color: var(--text);
-  line-height: 1.2; margin-bottom: 4px;
-}
-.r-card-cuisine {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--taupe-dark); margin-bottom: 6px; font-weight: 500;
-}
-.r-card-meta {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: var(--text-soft); margin-bottom: 6px;
-}
-.r-card-stars { color: var(--gold); }
-.r-card-price { color: var(--taupe-dark); font-weight: 500; }
-.r-card-area {
-  font-size: 11px; color: var(--text-muted);
-  margin-bottom: 8px;
-}
-.r-card-links {
-  display: flex; gap: 6px; flex-wrap: wrap;
-}
-.r-card-links a {
-  font-size: 10px; color: var(--taupe-dark); text-decoration: none;
-  padding: 3px 10px; border: 1px solid var(--border); border-radius: 16px;
-  transition: all 0.15s; letter-spacing: 0.3px; font-weight: 500;
-}
-.r-card-links a:hover {
-  border-color: var(--taupe-dark); color: var(--text);
-}
-
-/* Score pill */
-.r-score {
-  display: inline-block;
-  font-size: 10px; font-weight: 600;
-  padding: 2px 8px; border-radius: 10px;
-  background: var(--blush-light); color: var(--taupe-dark);
-}
-.r-score.high { background: var(--pink-bg); color: var(--heart); }
-
-/* ── Map View ── */
-.map-view {
-  display: none; padding: 0 16px 40px;
-}
-.map-container {
-  width: 100%; height: 65vh; border-radius: var(--radius);
-  overflow: hidden; box-shadow: var(--shadow);
-}
-#map { width: 100%; height: 100%; }
-
-.leaflet-popup-content-wrapper {
-  background: var(--card) !important; color: var(--text) !important;
-  border-radius: 12px !important; box-shadow: var(--shadow-hover) !important;
-  font-family: 'DM Sans', sans-serif !important;
-}
-.leaflet-popup-tip { background: var(--card) !important; }
-.leaflet-popup-content { margin: 12px !important; }
-.popup-img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
-.popup-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 16px; font-weight: 500; margin-bottom: 2px;
-}
-.popup-cuisine { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--taupe-dark); }
-.popup-meta { font-size: 12px; color: var(--text-soft); margin-top: 6px; line-height: 1.5; }
-.popup-meta .stars { color: var(--gold); }
-.popup-links { margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
-.popup-links a {
-  font-size: 10px; color: var(--taupe-dark); text-decoration: none;
-  padding: 3px 10px; border: 1px solid var(--border); border-radius: 16px;
-}
-.popup-links a:hover { border-color: var(--text); color: var(--text); }
-
-/* ── Infinite scroll sentinel ── */
-.scroll-sentinel { height: 1px; }
-
-/* ── Mobile tweaks ── */
-@media (max-width: 768px) {
-  .header { padding: 20px 16px 10px; }
-  .header h1 { font-size: 24px; letter-spacing: 1.5px; }
-  .header .subtitle { font-size: 13px; }
-  .filter-bar { padding: 8px 12px 12px; justify-content: flex-start; flex-wrap: nowrap; }
-  .chip { padding: 7px 14px; font-size: 12px; flex-shrink: 0; }
-  .search-wrap input { width: 140px; font-size: 12px; }
-  .count-badge { padding: 0 16px 10px; font-size: 11px; }
-  .view-toggle { padding: 0 16px 14px; }
-  .grid-view { padding: 0 10px 30px; }
-  .r-card-name { font-size: 16px; }
-  .r-card-body { padding: 10px 12px 12px; }
-  .r-save { opacity: 1; width: 30px; height: 30px; font-size: 14px; }
-  .map-container { height: 55vh; border-radius: 12px; }
-}
-
-/* iPad */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .masonry { column-count: 3; }
-  .map-container { height: 60vh; }
-}
-
-/* ── Loading shimmer ── */
-@keyframes shimmer {
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
-}
-.shimmer {
-  background: linear-gradient(90deg, var(--warm-bg) 0%, var(--blush-light) 50%, var(--warm-bg) 100%);
-  background-size: 200px 100%;
-  animation: shimmer 1.5s ease infinite;
+/* ── Mobile ── */
+@media(max-width:768px){
+  .header{padding:20px 16px 8px}
+  .header h1{font-size:24px;letter-spacing:1.5px}
+  .filters{padding:8px 10px;justify-content:flex-start;flex-wrap:nowrap}
+  .chip{padding:6px 12px;font-size:11px;flex-shrink:0}
+  .search-wrap input{width:120px;font-size:11px}
+  .view-bar{padding:4px 14px 12px}
+  .card-b .save{opacity:1;width:28px;height:28px;font-size:13px}
+  .card-b .name{font-size:15px}
+  .card-b .body{padding:8px 10px 12px}
+  .card-c img,.card-c .img-ph{width:90px;height:90px}
+  .card-c .name{font-size:15px}
+  .map-wrap{height:55vh;border-radius:12px}
 }
 </style>
 </head>
@@ -297,271 +134,177 @@ body {
 
 <div class="header">
   <h1>Sofia's Spots</h1>
-  <div class="subtitle">curated restaurants that match your vibe</div>
+  <div class="sub">curated restaurants that match your vibe</div>
 </div>
 
-<div class="filter-bar" id="filter-bar">
+<div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
   <div class="chip"><select id="f-area"><option value="all">Area</option><option value="1">West LA</option><option value="2">East / DTLA</option><option value="3">Valley</option><option value="4">OC</option></select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
-  <div class="chip" id="michelin-chip">Michelin</div>
-  <div class="chip" id="fav-chip">Saved</div>
+  <div class="chip" id="mic-chip">Michelin</div>
+  <div class="chip" id="fav-chip">Saved ♥</div>
   <div class="search-wrap"><input type="text" id="f-search" placeholder="Search..."></div>
 </div>
 
-<div class="view-toggle">
-  <button class="view-btn active" id="btn-grid">Browse</button>
-  <button class="view-btn" id="btn-map">Map</button>
+<div class="view-bar">
+  <button class="view-btn active" id="btn-grid">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    Grid
+  </button>
+  <button class="view-btn" id="btn-list">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/></svg>
+    List
+  </button>
+  <button class="view-btn" id="btn-map">
+    <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    Map
+  </button>
+  <span class="count-badge"><span id="count">0</span> spots</span>
 </div>
 
-<div class="count-badge"><span id="count">0</span> spots found</div>
-
-<div class="grid-view" id="grid-view">
-  <div class="masonry" id="masonry"></div>
-  <div class="scroll-sentinel" id="sentinel"></div>
-</div>
-
-<div class="map-view" id="map-view">
-  <div class="map-container"><div id="map"></div></div>
-</div>
+<div class="grid-view" id="grid-view"><div class="masonry" id="masonry"></div><div class="scroll-sentinel" id="sentinel"></div></div>
+<div class="list-view" id="list-view"><div class="list" id="list-cards"></div><div class="scroll-sentinel" id="sentinel-list"></div></div>
+<div class="map-view" id="map-view"><div class="map-wrap"><div id="map"></div></div></div>
 
 <script>
-let ALL_DATA = [], FILTERED = [];
-let map, markerGroup, favMarkerGroup, mapInitialized = false;
-let userFavs = JSON.parse(localStorage.getItem('sofia_favorites') || '{}');
-let rendered = 0;
-const BATCH = 30;
+let ALL=[],FILTERED=[],map,markerGroup,favGroup,mapReady=false,rendered=0,renderedList=0;
+const BATCH=30;
+let favs=JSON.parse(localStorage.getItem('sofia_favorites')||'{}');
+const VIBE=new Set(["Japanese / Sushi","Italian","Steakhouse","Persian","Mediterranean","Mexican / Latin","Seafood","French","Wine Bar / Lounge","Asian"]);
+const DOTS={"Japanese / Sushi":"#C97070","Italian":"#7A8F6D","Steakhouse":"#B8A99A","Persian":"#C5A972","Mediterranean":"#8BA4B8","Mexican / Latin":"#C9A86C","Asian":"#D4A0A0","Seafood":"#7EB5B5","French":"#B8A0C9","American":"#A0A0B8","Wine Bar / Lounge":"#C9B8A0","Other":"#B8B0A8"};
+const heights=[200,260,180,240,220,280,190,250,210,270,200,230,195,255,215,245,185,265,205,235];
 
-const VIBE_CUISINES = new Set([
-  "Japanese / Sushi","Italian","Steakhouse","Persian","Mediterranean",
-  "Mexican / Latin","Seafood","French","Wine Bar / Lounge","Asian"
-]);
+function sF(){localStorage.setItem('sofia_favorites',JSON.stringify(favs))}
+function isF(n){return!!favs[n]}
+function togF(n,e){if(e)e.stopPropagation();favs[n]?delete favs[n]:favs[n]=true;sF();applyFilters()}
+function stars(r){return r?'<span class="stars">★</span> '+r:''}
+function esc(s){return s.replace(/'/g,"\\'")}
+function bookUrl(r){return`https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}`}
+function menuUrl(r){return`https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.address+' menu')}`}
 
-function saveFavs() { localStorage.setItem('sofia_favorites', JSON.stringify(userFavs)); }
-function isFav(n) { return !!userFavs[n]; }
-function toggleFav(n, e) {
-  if (e) e.stopPropagation();
-  if (userFavs[n]) delete userFavs[n]; else userFavs[n] = true;
-  saveFavs(); applyFilters();
+function cardB(r,i){
+  const h=heights[i%heights.length];
+  const img=r.image_url?`<img src="${r.image_url}" style="height:${h}px" loading="lazy" onerror="this.outerHTML='<div class=img-ph>✦</div>'">`:'<div class="img-ph">✦</div>';
+  const sv=isF(r.name)||r.is_favorite;
+  return`<div class="card-b" data-i="${i}">
+    ${img}<button class="save ${sv?'on':''}" onclick="togF('${esc(r.name)}',event)">${sv?'♥':'♡'}</button>
+    ${r.michelin?`<div class="badge">${r.michelin}</div>`:''}
+    <div class="body">
+      <div class="name">${r.name}</div>
+      <div class="cuisine">${r.cuisine_type}</div>
+      <div class="info">${stars(r.avg_rating)} <span style="color:var(--text-muted)">(${(r.total_reviews||0).toLocaleString()})</span> · <span class="price">${r.price_display}</span> · ${r.area_name}</div>
+      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>
+    </div></div>`;
 }
 
-function stars(r) {
-  if (!r) return '';
-  return '<span class="r-card-stars">' + '★'.repeat(Math.floor(r)) + (r % 1 >= 0.3 ? '½' : '') + '</span>';
+function cardC(r,i){
+  const img=r.image_url?`<img src="${r.image_url}" loading="lazy" onerror="this.outerHTML='<div class=img-ph>✦</div>'">`:'<div class="img-ph">✦</div>';
+  const sv=isF(r.name)||r.is_favorite;
+  return`<div class="card-c" data-i="${i}">
+    ${img}<div class="body">
+      <div class="top"><div class="name">${r.name}${r.michelin?`<span class="badge-inline">${r.michelin}</span>`:''}</div><button class="fav ${sv?'on':''}" onclick="togF('${esc(r.name)}',event)">${sv?'♥':'♡'}</button></div>
+      <div class="cuisine">${r.cuisine_type}</div>
+      <div class="info">${stars(r.avg_rating)} (${(r.total_reviews||0).toLocaleString()}) · ${r.price_display} · ${r.area_name}</div>
+      <div class="links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>
+    </div></div>`;
 }
 
-function buildCard(r, i) {
-  const saved = isFav(r.name) || r.is_favorite;
-  const img = r.image_url
-    ? `<img class="r-card-img" src="${r.image_url}" loading="lazy" onerror="this.outerHTML='<div class=\\'r-card-img-placeholder\\'>✦</div>'">`
-    : '<div class="r-card-img-placeholder">✦</div>';
-  const michelin = r.michelin ? `<div class="r-michelin">${r.michelin}</div>` : '';
-  const scoreClass = r.score >= 70 ? 'high' : '';
-  const esc = r.name.replace(/'/g, "\\'");
-
-  return `<div class="r-card" data-idx="${i}" data-lat="${r.lat}" data-lng="${r.lng}">
-    ${img}
-    <button class="r-save ${saved ? 'saved' : ''}" onclick="toggleFav('${esc}', event)">${saved ? '♥' : '♡'}</button>
-    ${michelin}
-    <div class="r-card-body">
-      <div class="r-card-name">${r.name}</div>
-      <div class="r-card-cuisine">${r.cuisine_type}</div>
-      <div class="r-card-meta">
-        ${r.avg_rating ? `${stars(r.avg_rating)} ${r.avg_rating}` : ''}
-        ${r.total_reviews ? `<span style="color:var(--text-muted)">(${r.total_reviews.toLocaleString()})</span>` : ''}
-        <span class="r-card-price">${r.price_display}</span>
-        <span class="r-score ${scoreClass}">${r.score}pts</span>
-      </div>
-      <div class="r-card-area">${r.area_name} · ${r.categories.slice(0, 2).join(', ')}</div>
-      <div class="r-card-links">
-        <a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>
-        ${r.yelp_url ? `<a href="${r.yelp_url}" target="_blank">Yelp</a>` : ''}
-        <a href="https://www.google.com/search?q=${encodeURIComponent(r.name + ' ' + r.address + ' menu')}" target="_blank">Menu</a>
-      </div>
-    </div>
-  </div>`;
+function popup(r){
+  const img=r.image_url?`<img class="pop-img" src="${r.image_url}" onerror="this.style.display='none'">`:'';
+  return`${img}<div class="pop-name">${r.name}</div><div class="pop-cuisine">${r.cuisine_type}</div>
+    <div class="pop-meta">${stars(r.avg_rating)} (${(r.total_reviews||0).toLocaleString()}) · ${r.price_display}<br>${r.categories.join(', ')}<br>${r.address}</div>
+    <div class="pop-links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>`;
 }
 
-function buildPopup(r) {
-  const img = r.image_url ? `<img class="popup-img" src="${r.image_url}" onerror="this.style.display='none'">` : '';
-  return `${img}
-    <div class="popup-name">${r.name}</div>
-    <div class="popup-cuisine">${r.cuisine_type}</div>
-    <div class="popup-meta">
-      ${r.avg_rating ? `<span class="stars">${stars(r.avg_rating)}</span> ${r.avg_rating} (${r.total_reviews.toLocaleString()})` : ''}
-      · ${r.price_display}<br>${r.categories.join(', ')}<br>${r.address}
-    </div>
-    <div class="popup-links">
-      <a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>
-      ${r.yelp_url ? `<a href="${r.yelp_url}" target="_blank">Yelp</a>` : ''}
-      <a href="https://www.google.com/search?q=${encodeURIComponent(r.name + ' ' + r.address + ' menu')}" target="_blank">Menu</a>
-    </div>`;
-}
-
-function getFilters() {
-  return {
-    vibeOn: document.getElementById('vibe-chip').classList.contains('active'),
-    cuisine: document.getElementById('f-cuisine').value,
-    area: document.getElementById('f-area').value,
-    price: document.getElementById('f-price').value,
-    rating: parseFloat(document.getElementById('f-rating').value) || 0,
-    search: document.getElementById('f-search').value.toLowerCase().trim(),
-    micOnly: document.getElementById('michelin-chip').classList.contains('active'),
-    favOnly: document.getElementById('fav-chip').classList.contains('active'),
+function getF(){
+  return{
+    vibe:document.getElementById('vibe-chip').classList.contains('active'),
+    cuisine:document.getElementById('f-cuisine').value,
+    area:document.getElementById('f-area').value,
+    price:document.getElementById('f-price').value,
+    rating:parseFloat(document.getElementById('f-rating').value)||0,
+    search:document.getElementById('f-search').value.toLowerCase().trim(),
+    mic:document.getElementById('mic-chip').classList.contains('active'),
+    fav:document.getElementById('fav-chip').classList.contains('active'),
   };
 }
 
-function applyFilters() {
-  const f = getFilters();
-  FILTERED = ALL_DATA.filter(r => {
-    if (f.vibeOn && !r.is_favorite && !isFav(r.name)) {
-      if (!VIBE_CUISINES.has(r.cuisine_type)) return false;
-      if (r.price_level === 1) return false;
-      if (r.avg_rating && r.avg_rating < 4.0) return false;
-      if (!r.avg_rating) return false;
-      if (r.total_reviews < 50) return false;
+function applyFilters(){
+  const f=getF();
+  FILTERED=ALL.filter(r=>{
+    if(f.vibe&&!r.is_favorite&&!isF(r.name)){
+      if(!VIBE.has(r.cuisine_type))return false;
+      if(r.price_level===1)return false;
+      if(r.avg_rating&&r.avg_rating<4.0)return false;
+      if(!r.avg_rating)return false;
+      if(r.total_reviews<50)return false;
     }
-    if (f.cuisine !== 'all' && r.cuisine_type !== f.cuisine) return false;
-    if (f.cuisine === 'all' && r.cuisine_type === 'Other') return false;
-    if (f.area !== 'all' && r.area_tier !== parseInt(f.area)) return false;
-    if (f.price !== 'all' && r.price_level !== parseInt(f.price) && r.price_level !== 0) return false;
-    if (f.rating > 0 && r.avg_rating && r.avg_rating < f.rating) return false;
-    if (f.rating > 0 && !r.avg_rating) return false;
-    if (f.micOnly && !r.michelin) return false;
-    if (f.favOnly && !isFav(r.name) && !r.is_favorite) return false;
-    if (f.search) {
-      const h = `${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();
-      if (!h.includes(f.search)) return false;
-    }
+    if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
+    if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
+    if(f.area!=='all'&&r.area_tier!==parseInt(f.area))return false;
+    if(f.price!=='all'&&r.price_level!==parseInt(f.price)&&r.price_level!==0)return false;
+    if(f.rating>0&&r.avg_rating&&r.avg_rating<f.rating)return false;
+    if(f.rating>0&&!r.avg_rating)return false;
+    if(f.mic&&!r.michelin)return false;
+    if(f.fav&&!isF(r.name)&&!r.is_favorite)return false;
+    if(f.search){const h=`${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();if(!h.includes(f.search))return false}
     return true;
   });
-
-  document.getElementById('count').textContent = FILTERED.length;
-  renderGrid();
-  if (mapInitialized) renderMap();
+  document.getElementById('count').textContent=FILTERED.length;
+  renderGrid();renderList();
+  if(mapReady)renderMap();
 }
 
-function renderGrid() {
-  const grid = document.getElementById('masonry');
-  grid.innerHTML = '';
-  rendered = 0;
-  loadMoreCards();
-}
+function renderGrid(){const g=document.getElementById('masonry');g.innerHTML='';rendered=0;loadGrid()}
+function loadGrid(){const g=document.getElementById('masonry');const e=Math.min(rendered+BATCH,FILTERED.length);let h='';for(let i=rendered;i<e;i++)h+=cardB(FILTERED[i],i);g.insertAdjacentHTML('beforeend',h);rendered=e}
 
-function loadMoreCards() {
-  const grid = document.getElementById('masonry');
-  const end = Math.min(rendered + BATCH, FILTERED.length);
-  let html = '';
-  for (let i = rendered; i < end; i++) html += buildCard(FILTERED[i], i);
-  grid.insertAdjacentHTML('beforeend', html);
-  rendered = end;
-}
+function renderList(){const l=document.getElementById('list-cards');l.innerHTML='';renderedList=0;loadList()}
+function loadList(){const l=document.getElementById('list-cards');const e=Math.min(renderedList+BATCH,FILTERED.length);let h='';for(let i=renderedList;i<e;i++)h+=cardC(FILTERED[i],i);l.insertAdjacentHTML('beforeend',h);renderedList=e}
 
-function initMap() {
-  if (mapInitialized) return;
-  map = L.map('map', { attributionControl: false }).setView([34.05, -118.40], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-  markerGroup = L.layerGroup().addTo(map);
-  favMarkerGroup = L.layerGroup().addTo(map);
-  mapInitialized = true;
-}
+function initMap(){if(mapReady)return;map=L.map('map',{attributionControl:false}).setView([34.05,-118.40],11);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);markerGroup=L.layerGroup().addTo(map);favGroup=L.layerGroup().addTo(map);mapReady=true}
 
-function createDot(color, size) {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.2);cursor:pointer"></div>`,
-    iconSize: [size, size], iconAnchor: [size/2, size/2],
-  });
-}
-function createHeart() {
-  return L.divIcon({
-    className: '',
-    html: `<div style="font-size:20px;color:var(--heart,#C97070);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.2));text-align:center;line-height:1;cursor:pointer">♥</div>`,
-    iconSize: [20, 20], iconAnchor: [10, 10],
+function dot(c,s){return L.divIcon({className:'',html:`<div style="width:${s}px;height:${s}px;background:${c};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer"></div>`,iconSize:[s,s],iconAnchor:[s/2,s/2]})}
+function heart(){return L.divIcon({className:'',html:'<div style="font-size:18px;color:#C96B78;filter:drop-shadow(0 1px 3px rgba(0,0,0,.15));text-align:center;line-height:1;cursor:pointer">♥</div>',iconSize:[18,18],iconAnchor:[9,9]})}
+
+function renderMap(){
+  markerGroup.clearLayers();favGroup.clearLayers();let c=0;
+  FILTERED.forEach(r=>{
+    const f=isF(r.name)||r.is_favorite;
+    if(f){const m=L.marker([r.lat,r.lng],{icon:heart(),zIndexOffset:1000});m.bindPopup(popup(r),{maxWidth:260});favGroup.addLayer(m)}
+    else if(c<300){const col=DOTS[r.cuisine_type]||'#B8B0A8';const sz=r.score>=70?14:r.score>=50?11:9;const m=L.marker([r.lat,r.lng],{icon:dot(col,sz)});m.bindPopup(popup(r),{maxWidth:260});markerGroup.addLayer(m);c++}
   });
 }
 
-const DOT_COLORS = {
-  "Japanese / Sushi":"#C97070","Italian":"#7A8F6D","Steakhouse":"#B8A99A",
-  "Persian":"#C5A972","Mediterranean":"#8BA4B8","Mexican / Latin":"#C9A86C",
-  "Asian":"#D4A0A0","Seafood":"#7EB5B5","French":"#B8A0C9","American":"#A0A0B8",
-  "Wine Bar / Lounge":"#C9B8A0","Indian":"#C9A07A","Vegan / Vegetarian":"#8FB88F",
-  "Other":"#B8B0A8",
-};
-
-function renderMap() {
-  markerGroup.clearLayers();
-  favMarkerGroup.clearLayers();
-  let count = 0;
-  FILTERED.forEach((r, i) => {
-    const isF = isFav(r.name) || r.is_favorite;
-    if (isF) {
-      const m = L.marker([r.lat, r.lng], { icon: createHeart(), zIndexOffset: 1000 });
-      m.bindPopup(buildPopup(r), { maxWidth: 280 });
-      favMarkerGroup.addLayer(m);
-    } else if (count < 300) {
-      const color = DOT_COLORS[r.cuisine_type] || '#B8B0A8';
-      const size = r.score >= 70 ? 14 : r.score >= 50 ? 11 : 9;
-      const m = L.marker([r.lat, r.lng], { icon: createDot(color, size) });
-      m.bindPopup(buildPopup(r), { maxWidth: 280 });
-      markerGroup.addLayer(m);
-      count++;
-    }
+function setView(v){
+  ['grid','list','map'].forEach(id=>{
+    document.getElementById(id+'-view').style.display=id===v?'':'none';
+    document.getElementById('btn-'+id).classList.toggle('active',id===v);
   });
+  if(v==='map'){initMap();setTimeout(()=>{map.invalidateSize();renderMap()},100)}
 }
 
-// ── Init ──
-async function init() {
-  const resp = await fetch('restaurants.json');
-  ALL_DATA = await resp.json();
+async function init(){
+  const resp=await fetch('restaurants.json');ALL=await resp.json();
+  const types=[...new Set(ALL.map(r=>r.cuisine_type))].sort();
+  const sel=document.getElementById('f-cuisine');
+  types.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
 
-  // Populate cuisine dropdown
-  const types = [...new Set(ALL_DATA.map(r => r.cuisine_type))].sort();
-  const sel = document.getElementById('f-cuisine');
-  types.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
+  let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
+  ['vibe-chip','mic-chip','fav-chip'].forEach(id=>document.getElementById(id).addEventListener('click',function(){this.classList.toggle('active');applyFilters()}));
+  document.getElementById('btn-grid').addEventListener('click',()=>setView('grid'));
+  document.getElementById('btn-list').addEventListener('click',()=>setView('list'));
+  document.getElementById('btn-map').addEventListener('click',()=>setView('map'));
 
-  // Filter events
-  ['f-cuisine', 'f-area', 'f-price', 'f-rating'].forEach(id =>
-    document.getElementById(id).addEventListener('change', applyFilters));
-
-  let searchTimer;
-  document.getElementById('f-search').addEventListener('input', () => {
-    clearTimeout(searchTimer); searchTimer = setTimeout(applyFilters, 250);
-  });
-
-  ['vibe-chip', 'michelin-chip', 'fav-chip'].forEach(id => {
-    document.getElementById(id).addEventListener('click', function() {
-      this.classList.toggle('active'); applyFilters();
-    });
-  });
-
-  // View toggle
-  document.getElementById('btn-grid').addEventListener('click', () => {
-    document.getElementById('btn-grid').classList.add('active');
-    document.getElementById('btn-map').classList.remove('active');
-    document.getElementById('grid-view').style.display = '';
-    document.getElementById('map-view').style.display = 'none';
-  });
-  document.getElementById('btn-map').addEventListener('click', () => {
-    document.getElementById('btn-map').classList.add('active');
-    document.getElementById('btn-grid').classList.remove('active');
-    document.getElementById('grid-view').style.display = 'none';
-    document.getElementById('map-view').style.display = '';
-    initMap();
-    setTimeout(() => { map.invalidateSize(); renderMap(); }, 100);
-  });
-
-  // Infinite scroll
-  const observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && rendered < FILTERED.length) loadMoreCards();
-  }, { rootMargin: '200px' });
-  observer.observe(document.getElementById('sentinel'));
+  const obs=new IntersectionObserver(e=>{if(e[0].isIntersecting&&rendered<FILTERED.length)loadGrid()},{rootMargin:'200px'});
+  obs.observe(document.getElementById('sentinel'));
+  const obs2=new IntersectionObserver(e=>{if(e[0].isIntersecting&&renderedList<FILTERED.length)loadList()},{rootMargin:'200px'});
+  obs2.observe(document.getElementById('sentinel-list'));
 
   applyFilters();
 }
-
 init();
 </script>
 </body>
