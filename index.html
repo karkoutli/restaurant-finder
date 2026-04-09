@@ -211,10 +211,66 @@
   .sidebar::-webkit-scrollbar-track { background: #111; }
   .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
+  /* ── Mobile Filter Toggle ── */
+  .filter-toggle {
+    display: none;
+    background: #1a1a2e; border: none; color: #c084fc;
+    padding: 8px 24px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border-bottom: 1px solid #2a2a4a;
+    width: 100%; text-align: left;
+  }
+  .filter-toggle:hover { background: #1f1f35; }
+  .filter-toggle::after { content: ' ▼'; font-size: 10px; }
+  .filter-toggle.open::after { content: ' ▲'; }
+
+  /* ── Mobile Tab Bar ── */
+  .mobile-tabs {
+    display: none;
+    background: #1a1a2e; border-top: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  .mobile-tabs button {
+    flex: 1; background: none; border: none; color: #888;
+    padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .mobile-tabs button.active { color: #c084fc; border-bottom: 2px solid #c084fc; }
+
   @media (max-width: 900px) {
-    .main { flex-direction: column; }
-    .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid #2a2a4a; }
-    #map { height: 50vh; }
+    .header { padding: 10px 16px; }
+    .header h1 { font-size: 20px; }
+    .header .subtitle { font-size: 12px; }
+
+    .filter-toggle { display: block; }
+    .filters {
+      display: none; padding: 10px 16px; gap: 8px;
+      max-height: 40vh; overflow-y: auto;
+    }
+    .filters.open { display: flex; }
+
+    .mobile-tabs { display: flex; }
+
+    .main { flex-direction: column; flex: 1; overflow: hidden; }
+    #map { flex: 1; min-height: 0; }
+    .sidebar {
+      width: 100%; flex: 1; min-height: 0;
+      border-left: none; border-top: 1px solid #2a2a4a;
+      display: none;
+    }
+    .sidebar.mobile-visible { display: block; }
+    #map.mobile-hidden { display: none; }
+
+    .map-legend { bottom: 10px; left: 10px; padding: 6px 10px; font-size: 10px; max-width: 160px; }
+    .map-legend h4 { font-size: 10px; }
+
+    .filter-group { width: 100%; }
+    .filter-group select, .filter-group input[type="text"] { flex: 1; }
+    .cuisine-pills { max-height: 60px; overflow-y: auto; }
+
+    .card { padding: 10px 12px; }
+    .card-name { font-size: 14px; }
+
+    .leaflet-popup-content-wrapper { max-width: 280px !important; }
+    .popup-img { height: 100px; }
   }
 </style>
 </head>
@@ -228,7 +284,8 @@
   <div class="stats"><span id="visible-count">0</span> of <span id="total-count">0</span> restaurants</div>
 </div>
 
-<div class="filters">
+<button class="filter-toggle" id="filter-toggle">Filters</button>
+<div class="filters" id="filters-panel">
   <div class="filter-group">
     <label>Price</label>
     <div class="price-toggles">
@@ -328,12 +385,17 @@
       <div class="legend-item" style="margin-top:4px"><div class="legend-dot" style="background:#888;border:2px solid #dc2626"></div> Michelin</div>
     </div>
   </div>
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar-panel">
     <div class="sidebar-header">
       <span id="sidebar-count">0</span> restaurants — sorted by score
     </div>
     <div id="card-list"></div>
   </div>
+</div>
+
+<div class="mobile-tabs">
+  <button class="active" id="tab-map">Map</button>
+  <button id="tab-list">List</button>
 </div>
 
 <script>
@@ -607,6 +669,39 @@ async function init() {
   });
 
   applyFilters();
+
+  // Mobile: filter toggle
+  const filterToggle = document.getElementById('filter-toggle');
+  const filtersPanel = document.getElementById('filters-panel');
+  filterToggle.addEventListener('click', () => {
+    filtersPanel.classList.toggle('open');
+    filterToggle.classList.toggle('open');
+  });
+
+  // Mobile: map/list tabs
+  const tabMap = document.getElementById('tab-map');
+  const tabList = document.getElementById('tab-list');
+  const mapEl = document.getElementById('map');
+  const sidebarEl = document.getElementById('sidebar-panel');
+
+  tabMap.addEventListener('click', () => {
+    tabMap.classList.add('active'); tabList.classList.remove('active');
+    mapEl.classList.remove('mobile-hidden'); sidebarEl.classList.remove('mobile-visible');
+    map.invalidateSize();
+  });
+  tabList.addEventListener('click', () => {
+    tabList.classList.add('active'); tabMap.classList.remove('active');
+    mapEl.classList.add('mobile-hidden'); sidebarEl.classList.add('mobile-visible');
+  });
+
+  // Close filters when a filter is changed on mobile
+  const isMobile = () => window.innerWidth <= 900;
+  document.querySelectorAll('.filters select, .filters .toggle-btn, .filters .cuisine-pill').forEach(el => {
+    el.addEventListener('click', () => {
+      if (isMobile() && el.tagName === 'SELECT') return;
+      // Keep open for multi-select items
+    });
+  });
 }
 
 init();
