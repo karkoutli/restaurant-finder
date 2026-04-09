@@ -195,8 +195,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 <div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
-  <div class="chip"><select id="f-area"><option value="1" selected>West LA</option><option value="all">All Areas</option><option value="malibu">Malibu</option><option value="2">East / DTLA</option><option value="3">Valley</option><option value="4">OC</option></select></div>
+  <div class="chip"><select id="f-area"><option value="1" selected>West LA</option><option value="all">All Areas</option><option value="malibu">Malibu</option><option value="dtla">DTLA</option><option value="eastla">East LA</option><option value="glendale">Glendale</option><option value="longbeach">Long Beach</option><option value="3">Valley</option><option value="irvine">Irvine</option><option value="newport">Newport Beach</option><option value="costamesa">Costa Mesa</option><option value="4">All OC</option></select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
+  <div class="chip" id="coffee-chip">Coffee & Matcha</div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
   <div class="chip" id="mic-chip">Michelin</div>
   <div class="chip" id="fav-chip">Saved ♥</div>
@@ -293,6 +294,7 @@ function popup(r){
 function getF(){
   return{
     vibe:document.getElementById('vibe-chip').classList.contains('active'),
+    coffee:document.getElementById('coffee-chip').classList.contains('active'),
     cuisine:document.getElementById('f-cuisine').value,
     area:document.getElementById('f-area').value,
     price:document.getElementById('f-price').value,
@@ -305,23 +307,49 @@ function getF(){
 
 function applyFilters(){
   const f=getF();
+  // If coffee mode, disable vibe filter
+  if(f.coffee)f.vibe=false;
+
   FILTERED=ALL.filter(r=>{
-    if(r.is_disliked)return false;  // She tried it and didn't like it
-    if(f.vibe&&!r.is_favorite&&!isF(r.name)){
-      if(!VIBE.has(r.cuisine_type))return false;
-      if(r.price_level===1)return false;
-      if(r.avg_rating&&r.avg_rating<4.0)return false;
-      if(!r.avg_rating)return false;
-      if(r.total_reviews<50)return false;
+    if(r.is_disliked)return false;
+
+    // Coffee/matcha mode — only show coffee shops
+    if(f.coffee){
+      const cats=`${r.categories.join(' ')} ${r.cuisine_type} ${r.name}`.toLowerCase();
+      if(!cats.match(/coffee|matcha|tea |cafe|café|latte|espresso/))return false;
+      // Area filter still applies
+    } else {
+      // Normal vibe filter
+      if(f.vibe&&!r.is_favorite&&!isF(r.name)){
+        if(!VIBE.has(r.cuisine_type))return false;
+        if(r.price_level===1)return false;
+        if(r.avg_rating&&r.avg_rating<4.0)return false;
+        if(!r.avg_rating)return false;
+        if(r.total_reviews<50)return false;
+      }
+      if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
+      if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
     }
-    if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
-    if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
-    if(f.area==='malibu'){if(!r.area_name.toLowerCase().includes('malibu'))return false}
+
+    // Area filter
+    const an=(r.area_name||'').toLowerCase();
+    const addr=(r.address||'').toLowerCase();
+    const loc=an+' '+addr;
+    if(f.area==='malibu'){if(!loc.includes('malibu'))return false}
+    else if(f.area==='dtla'){if(!loc.includes('downtown'))return false}
+    else if(f.area==='eastla'){if(!['silver lake','los feliz','eagle rock','koreatown','echo park','highland park'].some(a=>loc.includes(a)))return false}
+    else if(f.area==='glendale'){if(!['glendale','burbank','pasadena'].some(a=>loc.includes(a)))return false}
+    else if(f.area==='longbeach'){if(!loc.includes('long beach'))return false}
+    else if(f.area==='irvine'){if(!loc.includes('irvine'))return false}
+    else if(f.area==='newport'){if(!['newport beach','newport coast','balboa'].some(a=>loc.includes(a)))return false}
+    else if(f.area==='costamesa'){if(!loc.includes('costa mesa'))return false}
     else if(f.area!=='all'&&r.area_tier!==parseInt(f.area))return false;
+
     if(f.price!=='all'&&r.price_level!==parseInt(f.price)&&r.price_level!==0)return false;
     if(f.rating>0&&r.avg_rating&&r.avg_rating<f.rating)return false;
     if(f.rating>0&&!r.avg_rating)return false;
     if(f.mic&&!r.michelin)return false;
+    // Saved filter — check both hardcoded favorites AND user-saved localStorage
     if(f.fav&&!isF(r.name)&&!r.is_favorite)return false;
     if(f.search){const h=`${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();if(!h.includes(f.search))return false}
     return true;
@@ -357,8 +385,8 @@ function loadList(){const l=document.getElementById('list-cards');const e=Math.m
 
 function initMap(){if(mapReady)return;map=L.map('map',{attributionControl:false}).setView([34.05,-118.40],11);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);markerGroup=L.layerGroup().addTo(map);favGroup=L.layerGroup().addTo(map);mapReady=true}
 
-function dot(c,s){return L.divIcon({className:'',html:`<div style="width:${s}px;height:${s}px;background:${c};border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer"></div>`,iconSize:[s,s],iconAnchor:[s/2,s/2]})}
-function heart(){return L.divIcon({className:'',html:'<div style="font-size:18px;color:#C96B78;filter:drop-shadow(0 1px 3px rgba(0,0,0,.15));text-align:center;line-height:1;cursor:pointer">♥</div>',iconSize:[18,18],iconAnchor:[9,9]})}
+function dot(c,s){return L.divIcon({className:'',html:`<div style="width:${s+4}px;height:${s+4}px;background:${c};border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(201,107,120,0.25);cursor:pointer;transition:transform .15s" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"></div>`,iconSize:[s+4,s+4],iconAnchor:[(s+4)/2,(s+4)/2]})}
+function heart(){return L.divIcon({className:'',html:'<div style="font-size:28px;color:#CB6E7A;filter:drop-shadow(0 2px 6px rgba(201,107,120,0.35));text-align:center;line-height:1;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform=\\'scale(1.2)\\'" onmouseout="this.style.transform=\\'scale(1)\\'">♥</div>',iconSize:[28,28],iconAnchor:[14,14]})}
 
 function renderMap(){
   markerGroup.clearLayers();favGroup.clearLayers();let c=0;
@@ -441,7 +469,10 @@ async function init(){
 
   ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
   let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
-  ['vibe-chip','mic-chip','fav-chip'].forEach(id=>document.getElementById(id).addEventListener('click',function(){this.classList.toggle('active');applyFilters()}));
+  ['vibe-chip','mic-chip','fav-chip','coffee-chip'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('click',function(){this.classList.toggle('active');applyFilters()});
+  });
   document.getElementById('btn-grid').addEventListener('click',()=>setView('grid'));
   document.getElementById('btn-list').addEventListener('click',()=>setView('list'));
   document.getElementById('btn-map').addEventListener('click',()=>setView('map'));
