@@ -198,6 +198,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   <div class="chip"><select id="f-area"><option value="1" selected>West LA</option><option value="all">All Areas</option><option value="malibu">Malibu</option><option value="dtla">DTLA</option><option value="eastla">East LA</option><option value="glendale">Glendale</option><option value="longbeach">Long Beach</option><option value="3">Valley</option><option value="irvine">Irvine</option><option value="newport">Newport Beach</option><option value="costamesa">Costa Mesa</option><option value="4">All OC</option></select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
+  <div class="chip" id="takeout-chip">Takeout</div>
   <div class="chip" id="mic-chip">Michelin</div>
   <div class="chip" id="fav-chip">Saved ♥</div>
   <div class="search-wrap"><input type="text" id="f-search" placeholder="Search..."></div>
@@ -293,7 +294,7 @@ function popup(r){
 function getF(){
   return{
     vibe:document.getElementById('vibe-chip').classList.contains('active'),
-    coffee:false,
+    takeout:document.getElementById('takeout-chip').classList.contains('active'),
     cuisine:document.getElementById('f-cuisine').value,
     area:document.getElementById('f-area').value,
     price:document.getElementById('f-price').value,
@@ -306,17 +307,13 @@ function getF(){
 
 function applyFilters(){
   const f=getF();
-  // If coffee mode, disable vibe filter
-  if(f.coffee)f.vibe=false;
-
   FILTERED=ALL.filter(r=>{
-    // Disliked restaurants still show but never in recommendations
 
-    // Coffee/matcha mode — only show coffee shops
-    if(f.coffee){
-      const cats=`${r.categories.join(' ')} ${r.cuisine_type} ${r.name}`.toLowerCase();
-      if(!cats.match(/coffee|matcha|tea |cafe|café|latte|espresso/))return false;
-      // Area filter still applies
+    // Takeout mode — all cuisines, all prices, just needs good food (4.0+ rating)
+    if(f.takeout){
+      if(r.avg_rating&&r.avg_rating<4.0)return false;
+      if(!r.avg_rating)return false;
+      // Skip vibe/cuisine/price filters, keep area + search + rating
     } else {
       // Normal vibe filter
       if(f.vibe&&!r.is_favorite&&!isF(r.name)){
@@ -468,7 +465,7 @@ async function init(){
 
   ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
   let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
-  ['vibe-chip','mic-chip','fav-chip'].forEach(id=>{
+  ['vibe-chip','takeout-chip','mic-chip','fav-chip'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('click',function(){this.classList.toggle('active');applyFilters()});
   });
