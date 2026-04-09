@@ -477,7 +477,12 @@ function setView(v){
 }
 
 async function init(){
-  const resp=await fetch('restaurants.json');ALL=await resp.json();
+  try{
+  const resp=await fetch('restaurants.json?v='+Date.now());
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  ALL=await resp.json();
+  console.log('Loaded '+ALL.length+' restaurants');
+  }catch(e){console.error('LOAD FAILED:',e);document.getElementById('count').textContent='Error loading data';return;}
   const types=[...new Set(ALL.map(r=>r.cuisine_type))].sort();
   const sel=document.getElementById('f-cuisine');
   types.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
