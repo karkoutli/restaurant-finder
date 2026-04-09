@@ -8,6 +8,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<style>
+  /* Custom cluster styling */
+  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    background: #c084fc33 !important;
+  }
+  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+    background: #c084fc !important; color: #fff !important;
+    font-weight: 700; font-size: 12px;
+  }
+</style>
 <style>
 :root {
   --bg: #0f0f0f; --surface: #1a1a2e; --surface2: #16213e;
@@ -439,15 +451,16 @@ body {
     <div class="map-legend">
       <h4>Legend</h4>
       <div class="legend-item" data-filter="fav" style="cursor:pointer"><span class="legend-heart">&#10084;</span> Favorites</div>
-      <div class="legend-item" data-filter="Japanese / Sushi" style="cursor:pointer"><div class="legend-dot" style="background:#ef4444"></div> Japanese / Sushi</div>
+      <div class="legend-item" data-filter="Japanese / Sushi" style="cursor:pointer"><div class="legend-dot" style="background:#ef4444"></div> Japanese</div>
       <div class="legend-item" data-filter="Italian" style="cursor:pointer"><div class="legend-dot" style="background:#22c55e"></div> Italian</div>
       <div class="legend-item" data-filter="Steakhouse" style="cursor:pointer"><div class="legend-dot" style="background:#f97316"></div> Steakhouse</div>
       <div class="legend-item" data-filter="Persian" style="cursor:pointer"><div class="legend-dot" style="background:#a855f7"></div> Persian</div>
       <div class="legend-item" data-filter="Mediterranean" style="cursor:pointer"><div class="legend-dot" style="background:#3b82f6"></div> Mediterranean</div>
-      <div class="legend-item" data-filter="Mexican" style="cursor:pointer"><div class="legend-dot" style="background:#eab308"></div> Mexican</div>
+      <div class="legend-item" data-filter="Mexican / Latin" style="cursor:pointer"><div class="legend-dot" style="background:#eab308"></div> Mexican</div>
       <div class="legend-item" data-filter="Asian" style="cursor:pointer"><div class="legend-dot" style="background:#ec4899"></div> Asian</div>
+      <div class="legend-item" data-filter="French" style="cursor:pointer"><div class="legend-dot" style="background:#f472b6"></div> French</div>
       <div class="legend-item" data-filter="Seafood" style="cursor:pointer"><div class="legend-dot" style="background:#06b6d4"></div> Seafood</div>
-      <div class="legend-item" data-filter="Other" style="cursor:pointer"><div class="legend-dot" style="background:#6b7280"></div> Other</div>
+      <div class="legend-item" data-filter="Wine Bar / Lounge" style="cursor:pointer"><div class="legend-dot" style="background:#818cf8"></div> Wine/Lounge</div>
       <div class="legend-item" data-filter="michelin" style="cursor:pointer;margin-top:3px"><div class="legend-dot" style="background:#888;border:2px solid #dc2626"></div> Michelin</div>
     </div>
   </div>
@@ -493,8 +506,11 @@ const isMobile = () => window.innerWidth <= 900;
 
 const CUISINE_COLORS = {
   "Japanese / Sushi":"#ef4444","Italian":"#22c55e","Steakhouse":"#f97316",
-  "Persian":"#a855f7","Mediterranean":"#3b82f6","Mexican":"#eab308",
-  "Asian":"#ec4899","Seafood":"#06b6d4","American":"#8b5cf6","Other":"#6b7280",
+  "Persian":"#a855f7","Mediterranean":"#3b82f6","Mexican / Latin":"#eab308",
+  "Asian":"#ec4899","Seafood":"#06b6d4","American":"#8b5cf6",
+  "French":"#f472b6","Indian":"#fb923c","Wine Bar / Lounge":"#818cf8",
+  "Vegan / Vegetarian":"#4ade80","Spanish":"#fbbf24","African":"#a78bfa",
+  "Other":"#6b7280",
 };
 const TIER_LABELS = {1:"West LA",2:"East/DTLA",3:"Valley",4:"OC"};
 const TIER_COLORS = {1:"tier-1",2:"tier-2",3:"tier-3",4:"tier-4"};
@@ -523,7 +539,12 @@ function createHeartIcon() {
 function initMap() {
   map = L.map('map',{zoomControl:!isMobile(),attributionControl:false}).setView([34.05,-118.40],11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-  markerGroup = L.layerGroup().addTo(map);
+  markerGroup = L.markerClusterGroup({
+    maxClusterRadius: 40,
+    spiderfyOnMaxZoom: true,
+    disableClusteringAtZoom: 15,
+    chunkedLoading: true,
+  }).addTo(map);
   favMarkerGroup = L.layerGroup().addTo(map);
 }
 
@@ -709,20 +730,42 @@ function render(data) {
     });
   }
 
-  // Mobile bottom sheet
+  // Mobile bottom sheet — lazy render for performance
   if (isMobile()) {
     const sc = document.getElementById('sheet-content');
-    sc.innerHTML = data.map((r,i) => buildMobileCard(r,i)).join('');
-    sc.querySelectorAll('.m-card').forEach(card => {
-      card.addEventListener('click', e => {
-        if (e.target.tagName==='A'||e.target.classList.contains('m-card-fav')) return;
-        const lat=parseFloat(card.dataset.lat), lng=parseFloat(card.dataset.lng);
-        map.setView([lat,lng],15);
-        openAt(lat,lng);
-        // Collapse sheet to peek
-        document.getElementById('bottom-sheet').style.height = '35vh';
-        setTimeout(()=>map.invalidateSize(),350);
+    const BATCH = 50;
+    let rendered = 0;
+
+    function renderBatch() {
+      const end = Math.min(rendered + BATCH, data.length);
+      let html = '';
+      for (let i = rendered; i < end; i++) html += buildMobileCard(data[i], i);
+      sc.insertAdjacentHTML('beforeend', html);
+
+      // Attach click handlers for new cards
+      sc.querySelectorAll('.m-card:not([data-bound])').forEach(card => {
+        card.setAttribute('data-bound', '1');
+        card.addEventListener('click', e => {
+          if (e.target.tagName==='A'||e.target.classList.contains('m-card-fav')) return;
+          const lat=parseFloat(card.dataset.lat), lng=parseFloat(card.dataset.lng);
+          map.setView([lat,lng],15);
+          openAt(lat,lng);
+          document.getElementById('bottom-sheet').style.height = '35vh';
+          setTimeout(()=>map.invalidateSize(),350);
+        });
       });
+      rendered = end;
+    }
+
+    sc.innerHTML = '';
+    rendered = 0;
+    renderBatch();
+
+    // Load more on scroll
+    sc.addEventListener('scroll', () => {
+      if (rendered < data.length && sc.scrollTop + sc.clientHeight > sc.scrollHeight - 200) {
+        renderBatch();
+      }
     });
   }
 }
