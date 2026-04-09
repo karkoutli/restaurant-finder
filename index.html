@@ -659,6 +659,7 @@ function applyFilters() {
   const f = getFilters();
   FILTERED = ALL_DATA.filter(r => {
     if (!f.activePrices.has(r.price_level)) return false;
+    if (f.cuisineVal === 'all' && r.cuisine_type === 'Other') return false;  // Hide Other unless selected
     if (f.cuisineVal !== 'all' && r.cuisine_type !== f.cuisineVal) return false;
     if (f.areaTier !== 'all' && r.area_tier !== parseInt(f.areaTier)) return false;
     if (r.score < f.minScore) return false;
