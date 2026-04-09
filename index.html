@@ -218,7 +218,16 @@ body {
 .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
 /* ══════════ MOBILE LAYOUT ══════════ */
-@media (max-width: 900px) {
+/* iPad Pro 11" (834px) — use desktop layout with narrower sidebar */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar { width: 320px; }
+  .desktop-filters { padding: 8px 16px; gap: 8px; }
+  .filter-group select { font-size: 11px; padding: 4px 6px; }
+  .toggle-btn { padding: 3px 6px; font-size: 11px; }
+}
+
+/* iPhone / phones only */
+@media (max-width: 768px) {
   .header { display: none; }
   .desktop-filters { display: none; }
   .sidebar { display: none; }
@@ -490,7 +499,7 @@ body {
 let ALL_DATA = [], FILTERED = [];
 let map, markerGroup, favMarkerGroup;
 let userFavorites = JSON.parse(localStorage.getItem('sofia_favorites') || '{}');
-const isMobile = () => window.innerWidth <= 900;
+const isMobile = () => window.innerWidth <= 768;
 
 const CUISINE_COLORS = {
   "Japanese / Sushi":"#ef4444","Italian":"#22c55e","Steakhouse":"#f97316",
