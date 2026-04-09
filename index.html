@@ -336,11 +336,11 @@ function applyFilters(){
     } else {
       // Normal vibe filter
       if(f.vibe&&!r.is_favorite&&!isF(r.name)){
-        if(!VIBE.has(r.cuisine_type))return false;
-        if(r.price_level===1)return false;
+        if(!VIBE.has(r.cuisine_type||''))return false;
+        if((r.price_level||0)===1)return false;
         if(r.avg_rating&&r.avg_rating<4.0)return false;
         if(!r.avg_rating)return false;
-        if(r.total_reviews<50)return false;
+        if((r.total_reviews||0)<50)return false;
       }
       if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
       if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
