@@ -311,7 +311,7 @@ function applyFilters(){
   if(f.coffee)f.vibe=false;
 
   FILTERED=ALL.filter(r=>{
-    if(r.is_disliked)return false;
+    // Disliked restaurants still show but never in recommendations
 
     // Coffee/matcha mode — only show coffee shops
     if(f.coffee){
@@ -362,7 +362,7 @@ function applyFilters(){
 function renderRecs(){
   const scroll=document.getElementById('recs-scroll');
   // Show recommended spots that aren't favorites — with images, sorted by score
-  const recs=FILTERED.filter(r=>r.is_recommended&&!r.is_favorite&&r.image_url).slice(0,15);
+  const recs=FILTERED.filter(r=>r.is_recommended&&!r.is_favorite&&!r.is_disliked&&r.image_url).slice(0,15);
   if(recs.length<3){document.getElementById('recs-section').style.display='none';return}
   document.getElementById('recs-section').style.display='';
   scroll.innerHTML=recs.map((r,i)=>{
