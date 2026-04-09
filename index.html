@@ -197,7 +197,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
   <div class="chip"><select id="f-area"><option value="1" selected>West LA</option><option value="all">All Areas</option><option value="malibu">Malibu</option><option value="dtla">DTLA</option><option value="eastla">East LA</option><option value="glendale">Glendale</option><option value="longbeach">Long Beach</option><option value="3">Valley</option><option value="irvine">Irvine</option><option value="newport">Newport Beach</option><option value="costamesa">Costa Mesa</option><option value="4">All OC</option></select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
-  <div class="chip" id="coffee-chip">Coffee & Matcha</div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
   <div class="chip" id="mic-chip">Michelin</div>
   <div class="chip" id="fav-chip">Saved ♥</div>
@@ -294,7 +293,7 @@ function popup(r){
 function getF(){
   return{
     vibe:document.getElementById('vibe-chip').classList.contains('active'),
-    coffee:document.getElementById('coffee-chip').classList.contains('active'),
+    coffee:false,
     cuisine:document.getElementById('f-cuisine').value,
     area:document.getElementById('f-area').value,
     price:document.getElementById('f-price').value,
@@ -469,7 +468,7 @@ async function init(){
 
   ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
   let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
-  ['vibe-chip','mic-chip','fav-chip','coffee-chip'].forEach(id=>{
+  ['vibe-chip','mic-chip','fav-chip'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('click',function(){this.classList.toggle('active');applyFilters()});
   });
