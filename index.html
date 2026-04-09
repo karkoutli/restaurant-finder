@@ -8,18 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<style>
-  /* Custom cluster styling */
-  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-    background: #c084fc33 !important;
-  }
-  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-    background: #c084fc !important; color: #fff !important;
-    font-weight: 700; font-size: 12px;
-  }
-</style>
 <style>
 :root {
   --bg: #0f0f0f; --surface: #1a1a2e; --surface2: #16213e;
@@ -539,12 +527,7 @@ function createHeartIcon() {
 function initMap() {
   map = L.map('map',{zoomControl:!isMobile(),attributionControl:false}).setView([34.05,-118.40],11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-  markerGroup = L.markerClusterGroup({
-    maxClusterRadius: 40,
-    spiderfyOnMaxZoom: true,
-    disableClusteringAtZoom: 15,
-    chunkedLoading: true,
-  }).addTo(map);
+  markerGroup = L.layerGroup().addTo(map);
   favMarkerGroup = L.layerGroup().addTo(map);
 }
 
@@ -701,17 +684,25 @@ function render(data) {
   document.getElementById('m-count').textContent = cnt;
   document.getElementById('m-sheet-count').textContent = cnt + ' places';
 
-  // Map markers
+  // Map markers — cap at 300 for performance, favorites always shown
   markerGroup.clearLayers();
   favMarkerGroup.clearLayers();
+  let markerCount = 0;
+  const MAX_MARKERS = 300;
   data.forEach((r, i) => {
     const isF = isFav(r.name) || r.is_favorite;
-    const layer = isF ? favMarkerGroup : markerGroup;
-    const icon = isF ? createHeartIcon() : createIcon(CUISINE_COLORS[r.cuisine_type]||'#6b7280', r.score, !!r.michelin);
-    const m = L.marker([r.lat, r.lng], {icon, zIndexOffset: isF ? 1000 : 0});
-    m.bindPopup(buildPopup(r), {maxWidth: isMobile() ? 260 : 300});
-    m.on('click', () => highlightCard(i));
-    layer.addLayer(m);
+    if (isF) {
+      const m = L.marker([r.lat, r.lng], {icon: createHeartIcon(), zIndexOffset: 1000});
+      m.bindPopup(buildPopup(r), {maxWidth: isMobile() ? 260 : 300});
+      m.on('click', () => highlightCard(i));
+      favMarkerGroup.addLayer(m);
+    } else if (markerCount < MAX_MARKERS) {
+      const m = L.marker([r.lat, r.lng], {icon: createIcon(CUISINE_COLORS[r.cuisine_type]||'#6b7280', r.score, !!r.michelin)});
+      m.bindPopup(buildPopup(r), {maxWidth: isMobile() ? 260 : 300});
+      m.on('click', () => highlightCard(i));
+      markerGroup.addLayer(m);
+      markerCount++;
+    }
   });
 
   // Desktop sidebar
