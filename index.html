@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant Finder — LA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #e879f9, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .subtitle { font-size: 12px; color: #888; margin-top: 2px; }
+  .stats { font-size: 13px; color: #999; }
+  .stats span { color: #c084fc; font-weight: 600; }
+
+  /* ── Filters Bar ── */
+  .filters {
+    background: #1a1a2e;
+    padding: 10px 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-group label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    font-weight: 600;
+  }
+  .filter-group select, .filter-group input[type="text"] {
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #e0e0e0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+  .filter-group select:focus, .filter-group input:focus { border-color: #c084fc; }
+  .filter-group input[type="text"] { width: 140px; }
+
+  .price-toggles { display: flex; gap: 4px; }
+  .price-btn {
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #999;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .price-btn.active { background: #c084fc22; border-color: #c084fc; color: #c084fc; }
+  .price-btn:hover { border-color: #c084fc88; }
+
+  .cuisine-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .cuisine-pill {
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #999;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cuisine-pill.active { background: #c084fc22; border-color: #c084fc; color: #c084fc; }
+  .cuisine-pill:hover { border-color: #c084fc88; }
+
+  .michelin-btn {
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #999;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .michelin-btn.active { background: #dc262622; border-color: #dc2626; color: #dc2626; }
+  .michelin-btn:hover { border-color: #dc262688; }
+
+  .reset-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #999;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { border-color: #e879f9; color: #e879f9; }
+
+  /* ── Vibe search bar ── */
+  .vibe-bar {
+    background: #12121f;
+    padding: 8px 24px;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .vibe-bar label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .vibe-input {
+    flex: 1;
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #e0e0e0;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+  .vibe-input:focus { border-color: #e879f9; }
+  .vibe-input::placeholder { color: #555; }
+  .vibe-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .vibe-tag {
+    background: #0f0f1a;
+    border: 1px solid #333;
+    color: #777;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .vibe-tag:hover { border-color: #e879f9; color: #e879f9; }
+  .vibe-tag.active { background: #e879f922; border-color: #e879f9; color: #e879f9; }
+
+  /* ── Main Layout ── */
+  .main { display: flex; flex: 1; overflow: hidden; }
+  #map { flex: 1; min-width: 0; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 420px;
+    background: #111;
+    overflow-y: auto;
+    border-left: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 12px 16px;
+    background: #1a1a2e;
+    border-bottom: 1px solid #2a2a4a;
+    font-size: 13px;
+    color: #888;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .sidebar-header span { color: #c084fc; font-weight: 600; }
+
+  /* ── Card ── */
+  .card {
+    padding: 14px 16px;
+    border-bottom: 1px solid #1a1a2e;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .card:hover { background: #1a1a2e; }
+  .card.active { background: #1a1a2e; border-left: 3px solid #c084fc; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .card-rank { font-size: 11px; color: #c084fc; font-weight: 700; margin-right: 8px; }
+  .card-name { font-size: 15px; font-weight: 600; color: #f0f0f0; flex: 1; }
+  .card-score { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+  .score-high { background: #22c55e22; color: #22c55e; }
+  .score-med { background: #eab30822; color: #eab308; }
+  .score-low { background: #66666622; color: #999; }
+
+  .michelin-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .michelin-2star { background: #dc262633; color: #f87171; }
+  .michelin-1star { background: #dc262622; color: #ef4444; }
+  .michelin-bib { background: #f9731622; color: #f97316; }
+  .michelin-plate { background: #66666622; color: #aaa; }
+
+  .card-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #888; margin-bottom: 6px; }
+  .card-meta .cuisine-tag { background: #c084fc15; color: #c084fc; padding: 1px 8px; border-radius: 10px; font-size: 11px; }
+  .card-meta .price-tag { color: #22c55e; font-weight: 600; }
+  .tier-1 { color: #22c55e; }
+  .tier-2 { color: #3b82f6; }
+  .tier-3 { color: #888; }
+
+  .card-ratings { display: flex; gap: 14px; font-size: 12px; margin-bottom: 6px; }
+  .rating-item { display: flex; align-items: center; gap: 4px; }
+  .rating-stars { color: #eab308; }
+  .rating-val { color: #e0e0e0; font-weight: 600; }
+  .rating-count { color: #666; font-size: 11px; }
+
+  .card-categories { font-size: 11px; color: #777; margin-bottom: 8px; }
+
+  .card-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .card-links a {
+    font-size: 11px; color: #c084fc; text-decoration: none;
+    padding: 2px 8px; border: 1px solid #c084fc44; border-radius: 4px; transition: all 0.15s;
+  }
+  .card-links a:hover { background: #c084fc22; border-color: #c084fc; }
+
+  .breakdown {
+    display: none; font-size: 11px; color: #777;
+    margin-top: 6px; padding: 6px 8px; background: #0a0a15; border-radius: 4px;
+  }
+  .card.active .breakdown { display: block; }
+  .breakdown span { color: #c084fc; }
+
+  /* ── Map popup ── */
+  .leaflet-popup-content-wrapper {
+    background: #1a1a2e !important; color: #e0e0e0 !important;
+    border-radius: 8px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-popup-tip { background: #1a1a2e !important; }
+  .popup-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .popup-score { color: #c084fc; font-weight: 600; }
+  .popup-michelin { color: #ef4444; font-weight: 700; font-size: 12px; }
+  .popup-meta { font-size: 12px; color: #999; margin-top: 4px; }
+  .popup-links { margin-top: 6px; }
+  .popup-links a { color: #c084fc; text-decoration: none; font-size: 12px; margin-right: 10px; }
+  .popup-links a:hover { text-decoration: underline; }
+
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-track { background: #111; }
+  .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid #2a2a4a; }
+    #map { height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Restaurant Finder</h1>
+    <div class="subtitle">LA restaurants that match her vibe</div>
+  </div>
+  <div class="stats"><span id="visible-count">0</span> restaurants shown</div>
+</div>
+
+<!-- Vibe search bar -->
+<div class="vibe-bar">
+  <label>Vibe / Setting</label>
+  <input type="text" class="vibe-input" id="vibe-input" placeholder="e.g. romantic date night, outdoor patio, lively upbeat, cozy intimate...">
+  <div class="vibe-tags">
+    <button class="vibe-tag" data-vibe="date night">Date Night</button>
+    <button class="vibe-tag" data-vibe="upbeat lively">Upbeat</button>
+    <button class="vibe-tag" data-vibe="romantic intimate">Romantic</button>
+    <button class="vibe-tag" data-vibe="outdoor patio">Outdoor</button>
+    <button class="vibe-tag" data-vibe="trendy chic">Trendy</button>
+    <button class="vibe-tag" data-vibe="cozy">Cozy</button>
+    <button class="vibe-tag" data-vibe="upscale elegant">Upscale</button>
+    <button class="vibe-tag" data-vibe="cocktails">Cocktails</button>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label>Price</label>
+    <div class="price-toggles">
+      <button class="price-btn" data-price="1">$</button>
+      <button class="price-btn active" data-price="2">$$</button>
+      <button class="price-btn active" data-price="3">$$$</button>
+      <button class="price-btn active" data-price="4">$$$$</button>
+      <button class="price-btn active" data-price="0">?</button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <label>Cuisine</label>
+    <div class="cuisine-pills" id="cuisine-pills"></div>
+  </div>
+
+  <div class="filter-group">
+    <label>Area</label>
+    <select id="area-filter">
+      <option value="all">All Areas</option>
+      <option value="1">West LA</option>
+      <option value="2">East / DTLA</option>
+      <option value="3">Valley / OC</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label>Score</label>
+    <select id="score-filter">
+      <option value="0">Any</option>
+      <option value="50">50+</option>
+      <option value="60" selected>60+</option>
+      <option value="70">70+</option>
+      <option value="80">80+</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label>Rating</label>
+    <select id="rating-filter">
+      <option value="0">Any</option>
+      <option value="4.0" selected>4.0+</option>
+      <option value="4.3">4.3+</option>
+      <option value="4.5">4.5+</option>
+      <option value="4.7">4.7+</option>
+    </select>
+  </div>
+
+  <button class="michelin-btn" id="michelin-filter">Michelin Only</button>
+
+  <div class="filter-group">
+    <label>Search</label>
+    <input type="text" id="search-input" placeholder="Name or area...">
+  </div>
+
+  <button class="reset-btn" id="reset-filters">Reset</button>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="sidebar">
+    <div class="sidebar-header">
+      Showing <span id="sidebar-count">0</span> restaurants — sorted by score
+    </div>
+    <div id="card-list"></div>
+  </div>
+</div>
+
+<script>
+let ALL_DATA = [];
+let map, markerGroup;
+
+const CUISINE_COLORS = {
+  "Japanese / Sushi": "#ef4444",
+  "Italian": "#22c55e",
+  "Steakhouse": "#f97316",
+  "Persian": "#a855f7",
+  "Mediterranean": "#3b82f6",
+  "Mexican": "#eab308",
+  "Asian": "#ec4899",
+  "Seafood": "#06b6d4",
+  "American": "#8b5cf6",
+  "Other": "#6b7280",
+};
+
+// Vibe keywords associated with Yelp categories for searching
+const VIBE_CATEGORY_MAP = {
+  "date night": ["wine bars", "cocktail bars", "italian", "french", "sushi bars", "seafood", "steakhouses", "lounges"],
+  "upbeat lively": ["lounges", "cocktail bars", "tapas", "new american", "asian fusion", "mexican"],
+  "romantic intimate": ["italian", "french", "wine bars", "seafood", "sushi bars", "mediterranean"],
+  "outdoor patio": ["mediterranean", "mexican", "seafood", "new american", "italian"],
+  "trendy chic": ["asian fusion", "new american", "cocktail bars", "lounges", "sushi bars"],
+  "cozy": ["italian", "mediterranean", "wine bars", "french", "persian"],
+  "upscale elegant": ["steakhouses", "french", "italian", "sushi bars", "seafood", "fine dining"],
+  "cocktails": ["cocktail bars", "lounges", "wine bars", "new american", "asian fusion"],
+};
+
+function createIcon(color, score, isMichelin) {
+  const baseSize = score >= 80 ? 18 : score >= 70 ? 15 : score >= 60 ? 13 : 11;
+  const size = isMichelin ? Math.max(baseSize, 20) : baseSize;
+  const border = isMichelin ? `3px solid #dc2626` : `2px solid ${color}88`;
+  const glow = isMichelin ? `0 0 10px #dc262666` : `0 0 6px ${color}44`;
+
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width:${size}px;height:${size}px;
+      background:${color};
+      border:${border};
+      border-radius:50%;
+      box-shadow:${glow};
+      cursor:pointer;
+      transition: transform 0.15s;
+    " onmouseover="this.style.transform='scale(1.4)'" onmouseout="this.style.transform='scale(1)'"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+  });
+}
+
+function initMap() {
+  map = L.map('map', { zoomControl: true, attributionControl: false }).setView([34.05, -118.40], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+  markerGroup = L.layerGroup().addTo(map);
+}
+
+function getScoreClass(s) { return s >= 70 ? 'score-high' : s >= 50 ? 'score-med' : 'score-low'; }
+
+function starsHtml(rating) {
+  if (!rating) return '';
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.3 ? 1 : 0;
+  return '<span class="rating-stars">' + '★'.repeat(full) + (half ? '½' : '') + '</span>';
+}
+
+function michelinBadgeHtml(r) {
+  if (!r.michelin) return '';
+  const cls = r.michelin_distinction === '2star' ? 'michelin-2star' :
+              r.michelin_distinction === '1star' ? 'michelin-1star' :
+              r.michelin_distinction === 'bib' ? 'michelin-bib' : 'michelin-plate';
+  return `<span class="michelin-badge ${cls}">${r.michelin}</span>`;
+}
+
+function buildPopup(r) {
+  const links = [];
+  if (r.yelp_url) links.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
+  if (r.maps_url) links.push(`<a href="${r.maps_url}" target="_blank">Maps</a>`);
+  if (r.website) links.push(`<a href="${r.website}" target="_blank">Website</a>`);
+  links.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">Book</a>`);
+  links.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name + ' ' + r.address + ' menu')}" target="_blank">Menu</a>`);
+
+  return `
+    <div class="popup-name">${r.name} ${r.michelin ? `<span class="popup-michelin">${r.michelin}</span>` : ''}</div>
+    <div><span class="popup-score">${r.score}/100</span> · ${r.price_display} · ${r.cuisine_type}</div>
+    <div class="popup-meta">
+      ${r.avg_rating ? `${starsHtml(r.avg_rating)} ${r.avg_rating} (${r.total_reviews.toLocaleString()} reviews)` : ''}
+      <br>${r.categories.join(', ')}
+      <br>${r.address}
+    </div>
+    <div class="popup-links">${links.join('')}</div>
+  `;
+}
+
+function buildCard(r, idx) {
+  const b = r.score_breakdown || {};
+  const links = [];
+  if (r.yelp_url) links.push(`<a href="${r.yelp_url}" target="_blank">Yelp</a>`);
+  if (r.maps_url) links.push(`<a href="${r.maps_url}" target="_blank">Maps</a>`);
+  if (r.website) links.push(`<a href="${r.website}" target="_blank">Web</a>`);
+  links.push(`<a href="https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}" target="_blank">OpenTable</a>`);
+  links.push(`<a href="https://resy.com/cities/la?query=${encodeURIComponent(r.name)}" target="_blank">Resy</a>`);
+  links.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(r.name + ' ' + r.address + ' menu')}" target="_blank">Menu</a>`);
+
+  const tierClass = `tier-${r.area_tier}`;
+  const tierLabel = r.area_tier === 1 ? 'West LA' : r.area_tier === 2 ? 'East/DTLA' : 'Valley/OC';
+
+  return `
+    <div class="card" data-idx="${idx}" data-lat="${r.lat}" data-lng="${r.lng}">
+      <div class="card-top">
+        <div style="display:flex;align-items:baseline;flex:1;min-width:0">
+          <span class="card-rank">#${idx + 1}</span>
+          <span class="card-name">${r.name}</span>
+          ${michelinBadgeHtml(r)}
+        </div>
+        <span class="card-score ${getScoreClass(r.score)}">${r.score}</span>
+      </div>
+      <div class="card-meta">
+        <span class="cuisine-tag">${r.cuisine_type}</span>
+        <span class="price-tag">${r.price_display}</span>
+        <span class="tier-tag ${tierClass}">${tierLabel} · ${r.area_name}</span>
+      </div>
+      <div class="card-ratings">
+        ${r.avg_rating ? `
+          <div class="rating-item">
+            ${starsHtml(r.avg_rating)}
+            <span class="rating-val">${r.avg_rating}</span>
+            <span class="rating-count">(${r.total_reviews.toLocaleString()} reviews)</span>
+          </div>
+        ` : ''}
+        ${r.rating_yelp ? `<div class="rating-item"><span style="color:#d32323">Y</span> ${r.rating_yelp} <span class="rating-count">(${(r.review_count_yelp||0).toLocaleString()})</span></div>` : ''}
+      </div>
+      <div class="card-categories">${r.categories.join(' · ')}</div>
+      <div class="card-links">${links.join('')}</div>
+      <div class="breakdown">
+        Cuisine:<span>${b.cuisine||0}</span> Vibe:<span>${b.vibe||0}</span> Rating:<span>${b.rating||0}</span> Price:<span>${b.price||0}</span> Pop:<span>${b.popularity||0}</span>
+      </div>
+    </div>
+  `;
+}
+
+function getActiveFilters() {
+  const activePrices = new Set();
+  document.querySelectorAll('.price-btn.active').forEach(b => activePrices.add(parseInt(b.dataset.price)));
+
+  const activeCuisines = new Set();
+  document.querySelectorAll('.cuisine-pill.active').forEach(p => activeCuisines.add(p.dataset.cuisine));
+
+  const areaTier = document.getElementById('area-filter').value;
+  const minScore = parseFloat(document.getElementById('score-filter').value) || 0;
+  const minRating = parseFloat(document.getElementById('rating-filter').value) || 0;
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const michelinOnly = document.getElementById('michelin-filter').classList.contains('active');
+  const vibeSearch = document.getElementById('vibe-input').value.toLowerCase().trim();
+
+  // Active vibe tags
+  const vibeKeywords = [];
+  document.querySelectorAll('.vibe-tag.active').forEach(t => {
+    vibeKeywords.push(...t.dataset.vibe.split(' '));
+  });
+  if (vibeSearch) vibeKeywords.push(...vibeSearch.split(/\s+/));
+
+  return { activePrices, activeCuisines, areaTier, minScore, minRating, search, michelinOnly, vibeKeywords };
+}
+
+function matchesVibe(r, vibeKeywords) {
+  if (vibeKeywords.length === 0) return { matches: true, boost: 0 };
+
+  const haystack = [
+    ...r.categories,
+    r.cuisine_type,
+    r.name,
+    r.area_name,
+  ].join(' ').toLowerCase();
+
+  let matchCount = 0;
+  for (const kw of vibeKeywords) {
+    if (haystack.includes(kw)) matchCount++;
+    // Check vibe category map
+    for (const [vibeKey, cats] of Object.entries(VIBE_CATEGORY_MAP)) {
+      if (vibeKey.includes(kw) || kw.includes(vibeKey.split(' ')[0])) {
+        for (const cat of cats) {
+          if (haystack.includes(cat)) { matchCount++; break; }
+        }
+      }
+    }
+  }
+
+  return { matches: matchCount > 0 || vibeKeywords.length === 0, boost: matchCount * 3 };
+}
+
+function applyFilters() {
+  const filters = getActiveFilters();
+
+  let filtered = ALL_DATA.filter(r => {
+    if (!filters.activePrices.has(r.price_level)) return false;
+    if (filters.activeCuisines.size > 0 && !filters.activeCuisines.has(r.cuisine_type)) return false;
+    if (filters.areaTier !== 'all' && r.area_tier !== parseInt(filters.areaTier)) return false;
+    if (r.score < filters.minScore) return false;
+    if (filters.minRating > 0 && r.avg_rating && r.avg_rating < filters.minRating) return false;
+    if (filters.minRating > 0 && !r.avg_rating) return false;
+    if (filters.michelinOnly && !r.michelin) return false;
+    if (filters.search) {
+      const h = `${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();
+      if (!h.includes(filters.search)) return false;
+    }
+    if (r.is_favorite) return false;
+    return true;
+  });
+
+  // Apply vibe scoring boost and filter
+  if (filters.vibeKeywords.length > 0) {
+    filtered = filtered.map(r => {
+      const vibe = matchesVibe(r, filters.vibeKeywords);
+      return { ...r, _vibeBoost: vibe.boost, _vibeMatch: vibe.matches };
+    }).filter(r => r._vibeMatch);
+
+    // Re-sort with vibe boost
+    filtered.sort((a, b) => (b.score + (b._vibeBoost || 0)) - (a.score + (a._vibeBoost || 0)));
+  }
+
+  render(filtered);
+}
+
+function render(data) {
+  document.getElementById('visible-count').textContent = data.length;
+  document.getElementById('sidebar-count').textContent = data.length;
+
+  markerGroup.clearLayers();
+
+  const cardList = document.getElementById('card-list');
+  cardList.innerHTML = data.map((r, i) => buildCard(r, i)).join('');
+
+  data.forEach((r, i) => {
+    const color = CUISINE_COLORS[r.cuisine_type] || CUISINE_COLORS['Other'];
+    const isMichelin = !!r.michelin;
+    const marker = L.marker([r.lat, r.lng], { icon: createIcon(color, r.score, isMichelin) });
+    marker.bindPopup(buildPopup(r), { maxWidth: 320 });
+    marker.on('click', () => {
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      const card = document.querySelector(`.card[data-idx="${i}"]`);
+      if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    });
+    markerGroup.addLayer(marker);
+  });
+
+  cardList.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.tagName === 'A') return;
+      const lat = parseFloat(card.dataset.lat);
+      const lng = parseFloat(card.dataset.lng);
+      map.setView([lat, lng], 15);
+      markerGroup.eachLayer(layer => {
+        if (Math.abs(layer.getLatLng().lat - lat) < 0.0001 && Math.abs(layer.getLatLng().lng - lng) < 0.0001) {
+          layer.openPopup();
+        }
+      });
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+}
+
+async function init() {
+  initMap();
+  const resp = await fetch('restaurants.json');
+  ALL_DATA = await resp.json();
+
+  // Cuisine pills
+  const cuisineTypes = [...new Set(ALL_DATA.map(r => r.cuisine_type))].sort();
+  const pillsContainer = document.getElementById('cuisine-pills');
+  cuisineTypes.forEach(c => {
+    const pill = document.createElement('button');
+    pill.className = 'cuisine-pill';
+    pill.dataset.cuisine = c;
+    pill.textContent = c;
+    pill.addEventListener('click', () => { pill.classList.toggle('active'); applyFilters(); });
+    pillsContainer.appendChild(pill);
+  });
+
+  // Price toggles
+  document.querySelectorAll('.price-btn').forEach(btn => {
+    btn.addEventListener('click', () => { btn.classList.toggle('active'); applyFilters(); });
+  });
+
+  // Michelin toggle
+  document.getElementById('michelin-filter').addEventListener('click', function() {
+    this.classList.toggle('active');
+    applyFilters();
+  });
+
+  // Vibe tags
+  document.querySelectorAll('.vibe-tag').forEach(tag => {
+    tag.addEventListener('click', () => { tag.classList.toggle('active'); applyFilters(); });
+  });
+
+  // Vibe input (debounced)
+  let vibeTimer;
+  document.getElementById('vibe-input').addEventListener('input', () => {
+    clearTimeout(vibeTimer);
+    vibeTimer = setTimeout(applyFilters, 300);
+  });
+
+  // Other filters
+  ['area-filter', 'score-filter', 'rating-filter'].forEach(id => {
+    document.getElementById(id).addEventListener('change', applyFilters);
+  });
+  document.getElementById('search-input').addEventListener('input', applyFilters);
+
+  // Reset
+  document.getElementById('reset-filters').addEventListener('click', () => {
+    document.querySelectorAll('.price-btn').forEach(b => b.classList.toggle('active', ['2','3','4','0'].includes(b.dataset.price)));
+    document.querySelectorAll('.cuisine-pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.vibe-tag').forEach(t => t.classList.remove('active'));
+    document.getElementById('michelin-filter').classList.remove('active');
+    document.getElementById('area-filter').value = 'all';
+    document.getElementById('score-filter').value = '60';
+    document.getElementById('rating-filter').value = '4.0';
+    document.getElementById('search-input').value = '';
+    document.getElementById('vibe-input').value = '';
+    map.setView([34.05, -118.40], 11);
+    applyFilters();
+  });
+
+  applyFilters();
+}
+
+init();
+</script>
+</body>
+</html>
