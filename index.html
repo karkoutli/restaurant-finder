@@ -862,9 +862,22 @@ async function init() {
     map.setView([34.05,-118.40],11); applyFilters();
   });
 
-  // Mobile events
-  ['m-cuisine','m-area','m-price','m-rating'].forEach(id=>
-    document.getElementById(id).addEventListener('change',applyFilters));
+  // Mobile events — bind both change and input for reliability on iOS
+  ['m-cuisine','m-area','m-price','m-rating'].forEach(id=> {
+    const el = document.getElementById(id);
+    el.addEventListener('change', applyFilters);
+    el.addEventListener('input', applyFilters);
+  });
+
+  // Sync mobile and desktop cuisine filters both ways
+  document.getElementById('cuisine-filter').addEventListener('change', () => {
+    document.getElementById('m-cuisine').value = document.getElementById('cuisine-filter').value;
+    applyFilters();
+  });
+  document.getElementById('m-cuisine').addEventListener('change', () => {
+    document.getElementById('cuisine-filter').value = document.getElementById('m-cuisine').value;
+    applyFilters();
+  });
   let mSearchTimer;
   document.getElementById('m-search').addEventListener('input',()=>{
     clearTimeout(mSearchTimer); mSearchTimer=setTimeout(applyFilters,250);
