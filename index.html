@@ -401,7 +401,7 @@ function loadList(){const l=document.getElementById('list-cards');const e=Math.m
 function initMap(){if(mapReady)return;map=L.map('map',{attributionControl:false}).setView([34.05,-118.40],11);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);markerGroup=L.layerGroup().addTo(map);favGroup=L.layerGroup().addTo(map);mapReady=true}
 
 function dot(c,s){return L.divIcon({className:'',html:`<div style="width:${s+4}px;height:${s+4}px;background:${c};border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(201,107,120,0.25);cursor:pointer;transition:transform .15s" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'"></div>`,iconSize:[s+4,s+4],iconAnchor:[(s+4)/2,(s+4)/2]})}
-function heart(){return L.divIcon({className:'',html:'<div style="font-size:28px;color:#CB6E7A;filter:drop-shadow(0 2px 6px rgba(201,107,120,0.35));text-align:center;line-height:1;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform=\\'scale(1.2)\\'" onmouseout="this.style.transform=\\'scale(1)\\'">♥</div>',iconSize:[28,28],iconAnchor:[14,14]})}
+function heart(){return L.divIcon({className:'',html:'<div style="font-size:28px;color:#CB6E7A;filter:drop-shadow(0 2px 6px rgba(201,107,120,0.35));text-align:center;line-height:1;cursor:pointer">♥</div>',iconSize:[28,28],iconAnchor:[14,14]})}
 
 function renderMap(){
   markerGroup.clearLayers();favGroup.clearLayers();let c=0;
