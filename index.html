@@ -391,8 +391,8 @@ function applyFilters(){
       return true;
     }
 
-    // NORMAL MODE — exclude coffee shops unless specifically selected
-    if(!f.coffee&&(r.is_coffee_shop||r.cuisine_type==='Coffee'))return false;
+    // NORMAL MODE — exclude coffee shops unless Coffee toggle is active
+    if(!f.coffee&&(r.is_coffee_shop||r.cuisine_type==='Coffee'||isCoffeeShop(r)))return false;
     if(f.vibe&&!r.is_favorite&&!isF(r.name)){
       if(!VIBE.has(r.cuisine_type||''))return false;
       if((r.price_level||0)===1)return false;
@@ -576,10 +576,11 @@ async function init(){
   ['vibe-chip','coffee-chip','mic-chip','fav-chip'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('click',function(){
-      // Exclusive modes: coffee/takeout/vibe — only one active at a time
-      if(id==='coffee-chip'||id==='takeout-chip'||id==='vibe-chip'){
-        ['vibe-chip','takeout-chip','coffee-chip'].forEach(oid=>{
-          if(oid!==id)document.getElementById(oid).classList.remove('active');
+      // Coffee and Vibe are exclusive — only one active at a time
+      if(id==='coffee-chip'||id==='vibe-chip'){
+        ['vibe-chip','coffee-chip'].forEach(oid=>{
+          var oel=document.getElementById(oid);
+          if(oel&&oid!==id)oel.classList.remove('active');
         });
       }
       this.classList.toggle('active');
