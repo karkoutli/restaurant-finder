@@ -391,7 +391,8 @@ function applyFilters(){
       return true;
     }
 
-    // NORMAL MODE
+    // NORMAL MODE — exclude coffee shops unless specifically selected
+    if(!f.coffee&&(r.is_coffee_shop||r.cuisine_type==='Coffee'))return false;
     if(f.vibe&&!r.is_favorite&&!isF(r.name)){
       if(!VIBE.has(r.cuisine_type||''))return false;
       if((r.price_level||0)===1)return false;
