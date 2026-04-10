@@ -426,16 +426,10 @@ function renderRecs(){
   const f=getF();
   const recs=ALL.filter(r=>{
     if(!r.is_recommended||r.is_favorite||r.is_disliked||!r.image_url)return false;
-    const loc=((r.area_name||'')+(r.address||'')).toLowerCase();
-    if(f.area==='malibu')return loc.includes('malibu');
-    if(f.area==='dtla')return loc.includes('downtown');
-    if(f.area==='eastla')return['silver lake','los feliz','eagle rock','koreatown','echo park'].some(a=>loc.includes(a));
-    if(f.area==='glendale')return['glendale','burbank','pasadena'].some(a=>loc.includes(a));
-    if(f.area==='longbeach')return loc.includes('long beach');
-    if(f.area==='irvine')return loc.includes('irvine');
-    if(f.area==='newport')return['newport beach','newport coast','balboa'].some(a=>loc.includes(a));
-    if(f.area==='costamesa')return loc.includes('costa mesa');
-    if(f.area!=='all'&&r.area_tier!==parseInt(f.area))return false;
+    // Exclude coffee shops from restaurant recs
+    if(r.is_coffee_shop||r.cuisine_type==='Coffee'||isCoffeeShop(r))return false;
+    // Use same area matching as main filter
+    if(!matchArea(r,f.area))return false;
     return true;
   }).slice(0,20);
   if(recs.length<3){document.getElementById('recs-section').style.display='none';return}
