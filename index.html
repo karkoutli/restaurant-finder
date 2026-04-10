@@ -410,8 +410,8 @@ function applyFilters(){
   });
 
   // Sort: takeout by cheapest+best, coffee by rating, normal by score
-  if(f.takeout)FILTERED.sort((a,b)=>(a.price_level||5)-(b.price_level||5)||(b.avg_rating||0)-(a.avg_rating||0));
-  else if(f.coffee)FILTERED.sort((a,b)=>(b.avg_rating||0)-(a.avg_rating||0));
+  // Always sort: highest score first, then by rating as tiebreaker
+  FILTERED.sort((a,b)=>(-a.score+b.score)||(-(a.avg_rating||0)+(b.avg_rating||0)));
   document.getElementById('count').textContent=FILTERED.length;
   renderRecs();renderGrid();renderList();
   if(mapReady)renderMap();
