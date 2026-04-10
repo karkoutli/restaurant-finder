@@ -546,14 +546,23 @@ function setView(v){
 
 function updateCuisineDropdown(){
   const area=document.getElementById('f-area').value;
+  const vibeOn=document.getElementById('vibe-chip').classList.contains('active');
   const sel=document.getElementById('f-cuisine');
   const cur=sel.value;
-  // Get cuisines that exist in the current area
+  // Only show cuisines that have restaurants passing current filters
   const types=new Set();
   ALL.forEach(r=>{
-    if(matchArea(r,area)&&r.cuisine_type&&r.cuisine_type!=='Other'){
-      types.add(r.cuisine_type);
+    if(!matchArea(r,area))return;
+    if(!r.cuisine_type||r.cuisine_type==='Other'||r.cuisine_type==='Coffee')return;
+    if(r.is_coffee_shop)return;
+    // If vibe is on, only count cuisines in the VIBE set with passing restaurants
+    if(vibeOn&&!r.is_favorite){
+      if(!VIBE.has(r.cuisine_type))return;
+      if((r.price_level||0)===1)return;
+      if(!r.avg_rating||r.avg_rating<4.0)return;
+      if((r.total_reviews||0)<50)return;
     }
+    types.add(r.cuisine_type);
   });
   const sorted=[...types].sort();
   sel.innerHTML='<option value="all">Cuisine</option>';
