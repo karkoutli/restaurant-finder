@@ -11,7 +11,7 @@
 <style>
 :root {
   /* Sofia's Pinterest palette: clean girl, white/cream, blush pink, gold */
-  --cream: #FDFBF9; --card: #FFFFFF; --warm-bg: #F7F2EF;
+  --cream: #FDF5F6; --card: #FFFFFF; --warm-bg: #F9EDED;
   --blush: #F0D4D8; --blush-light: #F9ECEE;
   --taupe: #C9B5AD; --taupe-dark: #8A7570;
   --gold: #C9A96E; --text: #2B2220;
@@ -30,22 +30,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 body::before{
   content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;pointer-events:none;
   background:
-    radial-gradient(ellipse at 15% 10%, rgba(219,160,168,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 20%, rgba(237,202,208,0.10) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 80%, rgba(212,138,148,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 60%, rgba(201,169,110,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 8% 5%, rgba(219,160,168,0.18) 0%, transparent 40%),
+    radial-gradient(ellipse at 92% 15%, rgba(237,202,208,0.14) 0%, transparent 35%),
+    radial-gradient(ellipse at 45% 50%, rgba(212,138,148,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(240,212,216,0.12) 0%, transparent 40%),
+    radial-gradient(ellipse at 15% 85%, rgba(201,169,110,0.07) 0%, transparent 35%),
+    radial-gradient(ellipse at 60% 25%, rgba(203,110,122,0.05) 0%, transparent 30%),
     var(--cream);
+}
+/* Paint stroke accents — abstract shapes */
+body::after{
+  content:'';position:fixed;top:0;right:0;width:300px;height:400px;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(219,160,168,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 40% 70%, rgba(237,202,208,0.10) 0%, transparent 50%);
+  border-radius:0 0 0 80%;
+  opacity:0.7;
 }
 
 /* ── Header ── */
 .header{text-align:center;padding:32px 20px 8px;position:relative}
-.header h1{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;letter-spacing:3px;color:var(--pink-accent);text-transform:uppercase}
+.header h1{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;letter-spacing:4px;color:var(--pink-accent);text-transform:uppercase}
 .header .sub{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--pink);margin-top:4px;letter-spacing:.5px}
 /* Pink brushstroke accent under title */
 .header::after{
-  content:'';display:block;width:80px;height:3px;margin:10px auto 0;
-  background:linear-gradient(90deg,transparent,var(--pink-accent),var(--pink-soft),transparent);
+  content:'';display:block;width:120px;height:4px;margin:12px auto 0;
+  background:linear-gradient(90deg,transparent 0%,var(--pink-soft) 15%,var(--pink-accent) 40%,var(--pink) 60%,var(--pink-soft) 85%,transparent 100%);
   border-radius:2px;
+  opacity:0.8;
 }
 
 /* ── Filter Bar ── */
