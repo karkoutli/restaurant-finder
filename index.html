@@ -194,12 +194,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 
 <div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
-  <div class="chip" id="takeout-chip">Takeout</div>
   <div class="chip" id="coffee-chip">Coffee & Matcha</div>
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
   <div class="chip"><select id="f-area">
     <option value="all">All SoCal</option>
     <optgroup label="── LA County ──">
+      <option value="alla">All LA</option>
       <option value="1" selected>West LA</option>
       <option value="malibu">Malibu</option>
       <option value="dtla">DTLA</option>
@@ -336,7 +336,7 @@ function isCoffeeShop(r){
 function getF(){
   return{
     vibe:document.getElementById('vibe-chip').classList.contains('active'),
-    takeout:document.getElementById('takeout-chip').classList.contains('active'),
+    takeout:false,
     coffee:document.getElementById('coffee-chip').classList.contains('active'),
     cuisine:document.getElementById('f-cuisine').value,
     area:document.getElementById('f-area').value,
@@ -350,6 +350,7 @@ function getF(){
 
 function matchArea(r,area){
   const loc=((r.area_name||'')+(r.address||'')).toLowerCase();
+  if(area==='alla')return r.area_tier===1||r.area_tier===2||r.area_tier===3;
   if(area==='malibu')return loc.includes('malibu');
   if(area==='dtla')return loc.includes('downtown')||loc.includes('dtla')||loc.includes('arts district');
   if(area==='eastla')return['silver lake','los feliz','eagle rock','koreatown','echo park','highland park'].some(a=>loc.includes(a));
@@ -571,7 +572,7 @@ async function init(){
 
   ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{applyFilters();if(id==='f-area')updateCuisineDropdown();}));
   let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
-  ['vibe-chip','takeout-chip','coffee-chip','mic-chip','fav-chip'].forEach(id=>{
+  ['vibe-chip','coffee-chip','mic-chip','fav-chip'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('click',function(){
       // Exclusive modes: coffee/takeout/vibe — only one active at a time
