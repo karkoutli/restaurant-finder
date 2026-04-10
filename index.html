@@ -370,10 +370,11 @@ function applyFilters(){
     // Area filter always applies
     if(!matchArea(r,f.area))return false;
 
-    // COFFEE MODE: specialty coffee shops only, referencing her bespoke list
+    // COFFEE MODE: use is_coffee_shop flag (scraped from Google) or keyword match against her list
     if(f.coffee){
-      if(!isCoffeeShop(r))return false;
-      return true;
+      if(r.is_coffee_shop)return true;
+      if(isCoffeeShop(r))return true;
+      return false;
     }
 
     // TAKEOUT MODE: her Uber Eats vibe — healthy, quality, $-$$
