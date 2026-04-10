@@ -367,7 +367,7 @@ function getF(){
 function matchArea(r,area){
   const loc=((r.area_name||'')+' '+(r.address||'')).toLowerCase();
   if(area==='all')return true;
-  if(area==='alla')return r.area_tier===1||r.area_tier===2||r.area_tier===3;
+  if(area==='alla')return r.area_tier===1||r.area_tier===2||r.area_tier===3||r.area_tier===6;
   // West LA sub-areas
   if(area==='beverlyhills')return loc.includes('beverly hills');
   if(area==='weho')return loc.includes('west hollywood');
@@ -463,7 +463,7 @@ function renderRecs(){
     // Use same area matching as main filter
     if(!matchArea(r,f.area))return false;
     return true;
-  }).slice(0,20);
+  }).sort((a,b)=>b.score-a.score).slice(0,20);
   if(recs.length<3){document.getElementById('recs-section').style.display='none';return}
   document.getElementById('recs-section').style.display='block';window._recs=recs;
   scroll.innerHTML=recs.map((r,i)=>{
