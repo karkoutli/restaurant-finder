@@ -194,7 +194,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 
 <div class="filters">
   <div class="chip active" id="vibe-chip">Her Vibe</div>
-  <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option><option value="coffee">Coffee & Matcha</option></select></div>
+  <div class="chip" id="takeout-chip">Takeout</div>
+  <div class="chip" id="coffee-chip">Coffee & Matcha</div>
+  <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
   <div class="chip"><select id="f-area">
     <option value="all">All SoCal</option>
     <optgroup label="── LA County ──">
@@ -217,7 +219,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   </select></div>
   <div class="chip"><select id="f-price"><option value="all">Price</option><option value="2">$$</option><option value="3">$$$</option><option value="4">$$$$</option></select></div>
   <div class="chip"><select id="f-rating"><option value="0">Rating</option><option value="4.0">4.0+</option><option value="4.3">4.3+</option><option value="4.5">4.5+</option></select></div>
-  <div class="chip" id="takeout-chip">Takeout</div>
   <div class="chip" id="mic-chip">Michelin</div>
   <div class="chip" id="fav-chip">Saved ♥</div>
   <div class="search-wrap"><input type="text" id="f-search" placeholder="Search..."></div>
@@ -267,7 +268,7 @@ function stars(r){return r?'<span class="stars">★</span> '+r:''}
 function esc(s){return s.replace(/'/g,"\\'")}
 function bookUrl(r){return`https://www.opentable.com/s?term=${encodeURIComponent(r.name)}&latitude=${r.lat}&longitude=${r.lng}`}
 function menuUrl(r){return r.yelp_menu_url||r.website||`https://www.google.com/search?q=${encodeURIComponent(r.name+' menu')}`}
-function instaUrl(r){return`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(r.name)}`}
+function instaUrl(r){return`https://www.google.com/search?q=${encodeURIComponent(r.name+' '+r.area_name+' instagram')}`}
 function ratingDisplay(r){
   let s='';
   if(r.avg_rating)s+=`<span class="stars">★</span> ${r.avg_rating}`;
@@ -310,10 +311,17 @@ function popup(r){
     <div class="pop-links"><a href="${bookUrl(r)}" target="_blank">Book</a>${r.yelp_url?`<a href="${r.yelp_url}" target="_blank">Yelp</a>`:''}<a href="${menuUrl(r)}" target="_blank">Menu</a></div>`;
 }
 
+// Takeout-friendly cuisines (from her Uber Eats favorites)
+const TAKEOUT_CUISINES=new Set(['Persian','Middle Eastern','Mediterranean','Asian','Japanese / Sushi','Mexican / Latin','Vegan / Vegetarian','Indian','French']);
+const TAKEOUT_KW=/healthy|organic|fresh|bowl|poke|grain|salad|rotisserie|grill|kitchen|eatery|cafe|bakery/i;
+const TAKEOUT_ANTI=/taco stand|taco truck|food truck|hot dog stand|burger stand|drive.thru|fast food|gas station|wing stop/i;
+const COFFEE_KW=/coffee|matcha|tea house|cafe|café|latte|espresso|roaster/i;
+
 function getF(){
   return{
     vibe:document.getElementById('vibe-chip').classList.contains('active'),
     takeout:document.getElementById('takeout-chip').classList.contains('active'),
+    coffee:document.getElementById('coffee-chip').classList.contains('active'),
     cuisine:document.getElementById('f-cuisine').value,
     area:document.getElementById('f-area').value,
     price:document.getElementById('f-price').value,
@@ -324,55 +332,72 @@ function getF(){
   };
 }
 
+function matchArea(r,area){
+  const loc=((r.area_name||'')+(r.address||'')).toLowerCase();
+  if(area==='malibu')return loc.includes('malibu');
+  if(area==='dtla')return loc.includes('downtown')||loc.includes('dtla')||loc.includes('arts district');
+  if(area==='eastla')return['silver lake','los feliz','eagle rock','koreatown','echo park','highland park'].some(a=>loc.includes(a));
+  if(area==='glendale')return['glendale','burbank','pasadena'].some(a=>loc.includes(a));
+  if(area==='longbeach')return loc.includes('long beach');
+  if(area==='irvine')return loc.includes('irvine');
+  if(area==='newport')return['newport beach','newport coast','balboa','corona del mar'].some(a=>loc.includes(a));
+  if(area==='costamesa')return loc.includes('costa mesa');
+  if(area==='all')return true;
+  return r.area_tier===parseInt(area);
+}
+
 function applyFilters(){
   const f=getF();
-  FILTERED=ALL.filter(r=>{
 
-    // Takeout mode — all cuisines, all prices, just needs good food (4.0+ rating)
-    if(f.takeout){
+  // Modes are exclusive: coffee > takeout > normal
+  FILTERED=ALL.filter(r=>{
+    // Area filter always applies
+    if(!matchArea(r,f.area))return false;
+
+    // COFFEE MODE: only coffee shops, no restaurants
+    if(f.coffee){
+      var txt=((r.categories||[]).join(' ')+' '+r.name).toLowerCase();
+      if(!COFFEE_KW.test(txt))return false;
+      // Exclude full restaurants that happen to have "cafe" in name
+      if(['steakhouse','sushi','italian','french','mexican','seafood','steakhouses'].some(c=>(r.cuisine_type||'').toLowerCase().includes(c)))return false;
       if(r.avg_rating&&r.avg_rating<4.0)return false;
-      if(!r.avg_rating)return false;
-      // Skip vibe/cuisine/price filters, keep area + search + rating
-    } else {
-      // Normal vibe filter
-      if(f.vibe&&!r.is_favorite&&!isF(r.name)){
-        if(!VIBE.has(r.cuisine_type||''))return false;
-        if((r.price_level||0)===1)return false;
-        if(r.avg_rating&&r.avg_rating<4.0)return false;
-        if(!r.avg_rating)return false;
-        if((r.total_reviews||0)<50)return false;
-      }
-      if(f.cuisine==='coffee'){
-        var cats=(r.categories||[]).join(' ').toLowerCase()+' '+r.name.toLowerCase()+(r.cuisine_type||'').toLowerCase();
-        if(!cats.match(/coffee|matcha|tea |cafe|café|latte|espresso/))return false;
-      } else if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
-      if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
+      return true;
     }
 
-    // Area filter
-    const an=(r.area_name||'').toLowerCase();
-    const addr=(r.address||'').toLowerCase();
-    const loc=an+' '+addr;
-    if(f.area==='malibu'){if(!loc.includes('malibu'))return false}
-    else if(f.area==='dtla'){if(!loc.includes('downtown'))return false}
-    else if(f.area==='eastla'){if(!['silver lake','los feliz','eagle rock','koreatown','echo park','highland park'].some(a=>loc.includes(a)))return false}
-    else if(f.area==='glendale'){if(!['glendale','burbank','pasadena'].some(a=>loc.includes(a)))return false}
-    else if(f.area==='longbeach'){if(!loc.includes('long beach'))return false}
-    else if(f.area==='irvine'){if(!loc.includes('irvine'))return false}
-    else if(f.area==='newport'){if(!['newport beach','newport coast','balboa'].some(a=>loc.includes(a)))return false}
-    else if(f.area==='costamesa'){if(!loc.includes('costa mesa'))return false}
-    else if(f.area!=='all'&&r.area_tier!==parseInt(f.area))return false;
+    // TAKEOUT MODE: her Uber Eats vibe — healthy, quality, $-$$
+    if(f.takeout){
+      if(!r.avg_rating||r.avg_rating<4.0)return false;
+      var txt=((r.categories||[]).join(' ')+' '+r.name+' '+(r.cuisine_type||'')).toLowerCase();
+      // Block taco stands and junk
+      if(TAKEOUT_ANTI.test(txt))return false;
+      // Prefer her takeout cuisines or keyword matches
+      var isTakeoutVibe=TAKEOUT_CUISINES.has(r.cuisine_type||'')||TAKEOUT_KW.test(txt);
+      // Also allow $-$$ from any cuisine if rated well
+      if(!isTakeoutVibe&&(r.price_level||0)>2)return false;
+      return true;
+    }
 
+    // NORMAL MODE
+    if(f.vibe&&!r.is_favorite&&!isF(r.name)){
+      if(!VIBE.has(r.cuisine_type||''))return false;
+      if((r.price_level||0)===1)return false;
+      if(!r.avg_rating||r.avg_rating<4.0)return false;
+      if((r.total_reviews||0)<50)return false;
+    }
+    if(f.cuisine!=='all'&&r.cuisine_type!==f.cuisine)return false;
+    if(f.cuisine==='all'&&r.cuisine_type==='Other')return false;
     if(f.price!=='all'&&r.price_level!==parseInt(f.price)&&r.price_level!==0)return false;
     if(f.rating>0&&r.avg_rating&&r.avg_rating<f.rating)return false;
     if(f.rating>0&&!r.avg_rating)return false;
     if(f.mic&&!r.michelin)return false;
-    // Saved filter — check both hardcoded favorites AND user-saved localStorage
     if(f.fav&&!isF(r.name)&&!r.is_favorite)return false;
-    if(f.search){const h=`${r.name} ${r.address} ${r.area_name} ${r.categories.join(' ')} ${r.cuisine_type}`.toLowerCase();if(!h.includes(f.search))return false}
+    if(f.search){var h=(r.name+' '+r.address+' '+r.area_name+' '+(r.categories||[]).join(' ')+' '+r.cuisine_type).toLowerCase();if(!h.includes(f.search))return false}
     return true;
   });
+
+  // Sort: takeout by cheapest+best, coffee by rating, normal by score
   if(f.takeout)FILTERED.sort((a,b)=>(a.price_level||5)-(b.price_level||5)||(b.avg_rating||0)-(a.avg_rating||0));
+  else if(f.coffee)FILTERED.sort((a,b)=>(b.avg_rating||0)-(a.avg_rating||0));
   document.getElementById('count').textContent=FILTERED.length;
   renderRecs();renderGrid();renderList();
   if(mapReady)renderMap();
@@ -504,6 +529,24 @@ function setView(v){
   if(v==='list'){renderList()}
 }
 
+function updateCuisineDropdown(){
+  const area=document.getElementById('f-area').value;
+  const sel=document.getElementById('f-cuisine');
+  const cur=sel.value;
+  // Get cuisines that exist in the current area
+  const types=new Set();
+  ALL.forEach(r=>{
+    if(matchArea(r,area)&&r.cuisine_type&&r.cuisine_type!=='Other'){
+      types.add(r.cuisine_type);
+    }
+  });
+  const sorted=[...types].sort();
+  sel.innerHTML='<option value="all">Cuisine</option>';
+  sorted.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+  // Restore previous selection if still valid
+  if(types.has(cur))sel.value=cur;
+}
+
 async function init(){
   try{
   const resp=await fetch('restaurants.json?v='+Date.now());
@@ -511,15 +554,23 @@ async function init(){
   ALL=await resp.json();
   console.log('Loaded '+ALL.length+' restaurants');
   }catch(e){console.error('LOAD FAILED:',e);document.getElementById('count').textContent='Error loading data';return;}
-  const types=[...new Set(ALL.map(r=>r.cuisine_type))].sort();
-  const sel=document.getElementById('f-cuisine');
-  types.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+  updateCuisineDropdown();
 
-  ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
+  ['f-cuisine','f-area','f-price','f-rating'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{applyFilters();if(id==='f-area')updateCuisineDropdown();}));
   let t;document.getElementById('f-search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(applyFilters,250)});
-  ['vibe-chip','takeout-chip','mic-chip','fav-chip'].forEach(id=>{
+  ['vibe-chip','takeout-chip','coffee-chip','mic-chip','fav-chip'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el)el.addEventListener('click',function(){this.classList.toggle('active');applyFilters()});
+    if(el)el.addEventListener('click',function(){
+      // Exclusive modes: coffee/takeout/vibe — only one active at a time
+      if(id==='coffee-chip'||id==='takeout-chip'||id==='vibe-chip'){
+        ['vibe-chip','takeout-chip','coffee-chip'].forEach(oid=>{
+          if(oid!==id)document.getElementById(oid).classList.remove('active');
+        });
+      }
+      this.classList.toggle('active');
+      applyFilters();
+      updateCuisineDropdown();
+    });
   });
   document.getElementById('btn-grid').addEventListener('click',()=>setView('grid'));
   document.getElementById('btn-list').addEventListener('click',()=>setView('list'));
