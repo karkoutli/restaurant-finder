@@ -313,9 +313,25 @@ function popup(r){
 
 // Takeout-friendly cuisines (from her Uber Eats favorites)
 const TAKEOUT_CUISINES=new Set(['Persian','Middle Eastern','Mediterranean','Asian','Japanese / Sushi','Mexican / Latin','Vegan / Vegetarian','Indian','French']);
-const TAKEOUT_KW=/healthy|organic|fresh|bowl|poke|grain|salad|rotisserie|grill|kitchen|eatery|cafe|bakery/i;
+const TAKEOUT_KW=/healthy|organic|fresh|bowl|poke|grain|salad|rotisserie|grill|kitchen|eatery/i;
 const TAKEOUT_ANTI=/taco stand|taco truck|food truck|hot dog stand|burger stand|drive.thru|fast food|gas station|wing stop/i;
-const COFFEE_KW=/coffee|matcha|tea house|cafe|café|latte|espresso|roaster/i;
+// Specialty coffee — must match these keywords AND not be a restaurant
+const COFFEE_KW=/\bcoffee\b|\bmatcha\b|\broaster|espresso bar|\blatte\b/i;
+// Her bespoke coffee favorites — always show these
+const COFFEE_FAVS=['goodboybob','maru','community goods','stereoscope','alfred','concierge','verve','endorffeine','endorfinne','rok matcha','stagger','lalaland reserve','yala','yeems','boxx','canyon coffee','intelligentsia','boy and the bear','mandarin stand','loquat','kumquat','hooked','lunchbox','quat coffee'].map(s=>s.toLowerCase());
+function isCoffeeShop(r){
+  var txt=((r.categories||[]).join(' ')+' '+r.name).toLowerCase();
+  // Check if it's one of her favorites
+  if(COFFEE_FAVS.some(f=>txt.includes(f)))return true;
+  // Must have specialty coffee keywords
+  if(!COFFEE_KW.test(txt))return false;
+  // Exclude restaurants that happen to have coffee in name
+  var ct=(r.cuisine_type||'').toLowerCase();
+  if(['steakhouse','sushi','italian','french','mexican','seafood','persian','mediterranean','american','asian','middle eastern'].some(c=>ct.includes(c)))return false;
+  // Exclude restaurants with "cafe" in name but are actually restaurants (check categories)
+  if(txt.includes('cafe')&&!txt.includes('coffee')&&!txt.includes('matcha')&&!txt.includes('espresso')&&!txt.includes('roaster'))return false;
+  return true;
+}
 
 function getF(){
   return{
@@ -354,13 +370,9 @@ function applyFilters(){
     // Area filter always applies
     if(!matchArea(r,f.area))return false;
 
-    // COFFEE MODE: only coffee shops, no restaurants
+    // COFFEE MODE: specialty coffee shops only, referencing her bespoke list
     if(f.coffee){
-      var txt=((r.categories||[]).join(' ')+' '+r.name).toLowerCase();
-      if(!COFFEE_KW.test(txt))return false;
-      // Exclude full restaurants that happen to have "cafe" in name
-      if(['steakhouse','sushi','italian','french','mexican','seafood','steakhouses'].some(c=>(r.cuisine_type||'').toLowerCase().includes(c)))return false;
-      if(r.avg_rating&&r.avg_rating<4.0)return false;
+      if(!isCoffeeShop(r))return false;
       return true;
     }
 
