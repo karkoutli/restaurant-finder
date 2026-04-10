@@ -198,13 +198,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   <div class="chip"><select id="f-cuisine"><option value="all">Cuisine</option></select></div>
   <div class="chip"><select id="f-area">
     <option value="all">All SoCal</option>
-    <optgroup label="── LA County ──">
-      <option value="alla">All LA</option>
-      <option value="1" selected>West LA</option>
+    <optgroup label="── West LA ──">
+      <option value="1" selected>All West LA</option>
+      <option value="beverlyhills">Beverly Hills</option>
+      <option value="weho">West Hollywood</option>
+      <option value="santamonica">Santa Monica</option>
+      <option value="brentwood">Brentwood</option>
+      <option value="venice">Venice</option>
+      <option value="culvercity">Culver City</option>
+      <option value="westwood">Westwood</option>
+      <option value="centurycity">Century City</option>
+      <option value="hollywood">Hollywood</option>
       <option value="malibu">Malibu</option>
+    </optgroup>
+    <optgroup label="── East / Central LA ──">
+      <option value="alla">All LA</option>
       <option value="dtla">DTLA</option>
       <option value="eastla">East LA</option>
       <option value="glendale">Glendale / Pasadena</option>
+    </optgroup>
+    <optgroup label="── South Bay ──">
+      <option value="southbay">South Bay</option>
+    </optgroup>
+    <optgroup label="── Valley ──">
       <option value="3">The Valley</option>
     </optgroup>
     <optgroup label="── Long Beach ──">
@@ -349,17 +365,33 @@ function getF(){
 }
 
 function matchArea(r,area){
-  const loc=((r.area_name||'')+(r.address||'')).toLowerCase();
+  const loc=((r.area_name||'')+' '+(r.address||'')).toLowerCase();
+  if(area==='all')return true;
   if(area==='alla')return r.area_tier===1||r.area_tier===2||r.area_tier===3;
+  // West LA sub-areas
+  if(area==='beverlyhills')return loc.includes('beverly hills');
+  if(area==='weho')return loc.includes('west hollywood');
+  if(area==='santamonica')return loc.includes('santa monica');
+  if(area==='brentwood')return loc.includes('brentwood');
+  if(area==='venice')return loc.includes('venice');
+  if(area==='culvercity')return loc.includes('culver city');
+  if(area==='westwood')return loc.includes('westwood');
+  if(area==='centurycity')return loc.includes('century city');
+  if(area==='hollywood')return loc.includes('hollywood')&&!loc.includes('west hollywood');
   if(area==='malibu')return loc.includes('malibu');
-  if(area==='dtla')return loc.includes('downtown')||loc.includes('dtla')||loc.includes('arts district');
-  if(area==='eastla')return['silver lake','los feliz','eagle rock','koreatown','echo park','highland park'].some(a=>loc.includes(a));
+  // East/Central
+  if(area==='dtla')return['downtown','dtla','arts district','little tokyo','chinatown'].some(a=>loc.includes(a));
+  if(area==='eastla')return['silver lake','los feliz','eagle rock','koreatown','echo park','highland park','west adams'].some(a=>loc.includes(a));
   if(area==='glendale')return['glendale','burbank','pasadena'].some(a=>loc.includes(a));
+  // South Bay
+  if(area==='southbay')return['manhattan beach','hermosa beach','redondo beach','el segundo','torrance','south bay'].some(a=>loc.includes(a));
+  // Long Beach
   if(area==='longbeach')return loc.includes('long beach');
+  // OC sub-areas
   if(area==='irvine')return loc.includes('irvine');
   if(area==='newport')return['newport beach','newport coast','balboa','corona del mar'].some(a=>loc.includes(a));
   if(area==='costamesa')return loc.includes('costa mesa');
-  if(area==='all')return true;
+  // Tier-based fallback
   return r.area_tier===parseInt(area);
 }
 
