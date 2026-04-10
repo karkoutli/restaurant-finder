@@ -199,7 +199,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   <div class="chip"><select id="f-area">
     <option value="all">All SoCal</option>
     <optgroup label="── West LA ──">
-      <option value="1" selected>All West LA</option>
+      <option value="1">All West LA</option>
       <option value="beverlyhills">Beverly Hills</option>
       <option value="weho">West Hollywood</option>
       <option value="santamonica">Santa Monica</option>
@@ -211,8 +211,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
       <option value="hollywood">Hollywood</option>
       <option value="malibu">Malibu</option>
     </optgroup>
+    <option value="alla" selected>All LA</option>
     <optgroup label="── East / Central LA ──">
-      <option value="alla">All LA</option>
       <option value="dtla">DTLA</option>
       <option value="eastla">East LA</option>
       <option value="glendale">Glendale / Pasadena</option>
@@ -371,7 +371,7 @@ function matchArea(r,area){
   // West LA sub-areas
   if(area==='beverlyhills')return loc.includes('beverly hills');
   if(area==='weho')return loc.includes('west hollywood');
-  if(area==='santamonica')return loc.includes('santa monica');
+  if(area==='santamonica')return(r.area_name||'').toLowerCase().includes('santa monica')||loc.includes('santa monica, ca');
   if(area==='brentwood')return loc.includes('brentwood');
   if(area==='venice')return loc.includes('venice');
   if(area==='culvercity')return loc.includes('culver city');
